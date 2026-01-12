@@ -1,73 +1,81 @@
-# React + TypeScript + Vite
+# InvenEmisi v0.1
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Sistem Inventarisasi Emisi Berbasis Node (Visual Calculation Engine)**
 
-Currently, two official plugins are available:
+InvenEmisi adalah aplikasi web modern untuk membantu praktisi lingkungan, insinyur, dan peneliti dalam melakukan perhitungan inventarisasi emisi yang kompleks. Menggunakan pendekatan **Node-Based Editor** (mirip Blender/Unreal Engine), pengguna dapat membangun alur perhitungan emisi secara visual, transparan, dan terstruktur.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+![Screenshot Workbench](https://via.placeholder.com/800x450?text=Workbench+Preview)
 
-## React Compiler
+## 🌟 Fitur Utama (v0.1)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1.  **Infinite Canvas Workflow**:
+    *   Susun diagram perhitungan di canvas tanpa batas luas.
+    *   Drag-and-drop node dari sidebar.
+    *   Koneksikan antar node untuk mengalirkan data.
 
-## Expanding the ESLint configuration
+2.  **Tipe Node Cerdas**:
+    *   **Source Node**: Input data aktivitas (misal: konsumsi bahan bakar dalam `Liter`, `Ton`, `kWh`).
+    *   **Factor Node**: Input faktor emisi. Terintegrasi dengan database **CORINAIR** (13.000+ data) dengan fitur pencarian dan filter (Sector, Fuel, Pollutant).
+    *   **Process Node**: Mesin hitung fleksibel. Dukung rumus kustom (misal: `A * B`), eksponen unit otomatis, dan deteksi error circular dependency.
+    *   **Group Node**: Wadah visual untuk mengelompokkan dan merapikan node-node terkait.
+    *   **PassThrough Node**: Jembatan data untuk merapikan jalur koneksi yang rumit.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+3.  **Automatic Unit Conversion**:
+    *   Sistem secara otomatis mendeteksi dan menghitung satuan.
+    *   Mendukung validasi ketat (contoh: `kWh` tidak bisa dijumlahkan dengan `Kg`).
+    *   Format hasil otomatis.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+4.  **Layer Management**:
+    *   Kontrol penuh posisi tumpukan visual (Z-Index).
+    *   Klik kanan untuk "Send to Back" atau "Bring to Front".
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🚀 Alur Penggunaan (Workflow)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1.  **Input Data**: Tarik **Source Node** ke canvas, isi nilai aktivitas (contoh: 1000 Liter Solar).
+2.  **Cari Faktor**: Tarik **Factor Node**, buka database, cari faktor emisi yang sesuai (contoh: CO2 dari Diesel Industry).
+3.  **Proses**: Hubungkan keduanya ke **Process Node**.
+4.  **Hitung**: Tulis rumus (misal `Activity * Factor`). Hasil emisi langsung keluar dengan satuan yang benar.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Instalasi & Menjalankan
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Project ini dibangun dengan **React**, **TypeScript**, **Vite**, dan **React Flow**.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Prasyarat
+*   Node.js (v18+)
+*   npm
+
+### Langkah-langkah
+1.  Clone repository:
+    ```bash
+    git clone https://github.com/uzanshid/InvenEmisi.git
+    cd InvenEmisi
+    ```
+
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+
+3.  Jalankan mode development:
+    ```bash
+    npm run dev
+    ```
+    Buka browser di `http://localhost:5173`.
+
+4.  Build untuk production:
+    ```bash
+    npm run build
+    ```
+
+## 🤝 Kontribusi (Roadmap)
+
+Versi saat ini (v0.1) masih dalam tahap pengembangan awal (Alpha).
+Fokus pengembangan selanjutnya:
+*   [ ] Export/Import project (JSON file).
+*   [ ] Reporting module (Generasi PDF/Excel).
+*   [ ] Lebih banyak database faktor emisi.
+*   [ ] Analisis ketidakpastian (Uncertainty Analysis).
+
+---
+**Developed by Fauzan Shidiq**
+*Open Source for Environmental Sustainability*
