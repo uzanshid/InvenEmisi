@@ -1,4 +1,4 @@
-# InvenEmisi v0.1
+# InvenEmisi v0.2
 
 **Sistem Inventarisasi Emisi Berbasis Node (Visual Calculation Engine)**
 
@@ -6,7 +6,7 @@ InvenEmisi adalah aplikasi web modern untuk membantu praktisi lingkungan, insiny
 
 ![Screenshot Workbench](https://via.placeholder.com/800x450?text=Workbench+Preview)
 
-## 🌟 Fitur Utama (v0.1)
+## 🌟 Fitur Utama (v0.2)
 
 1.  **Infinite Canvas Workflow**:
     *   Susun diagram perhitungan di canvas tanpa batas luas.
@@ -15,7 +15,7 @@ InvenEmisi adalah aplikasi web modern untuk membantu praktisi lingkungan, insiny
 
 2.  **Tipe Node Cerdas**:
     *   **Source Node**: Input data aktivitas (misal: konsumsi bahan bakar dalam `Liter`, `Ton`, `kWh`).
-    *   **Factor Node**: Input faktor emisi. Terintegrasi dengan database **CORINAIR** (13.000+ data) dengan fitur pencarian dan filter (Sector, Fuel, Pollutant).
+    *   **Factor Node**: Input faktor emisi. Terintegrasi dengan database **EMEP/EEA** (12.500+ data) dengan fitur pencarian dan filter multi-kolom (NFR, Sector, Table, Type, Technology, Fuel, Abatement, Region, Pollutant).
     *   **Process Node**: Mesin hitung fleksibel. Dukung rumus kustom (misal: `A * B`), eksponen unit otomatis, dan deteksi error circular dependency.
     *   **Group Node**: Wadah visual untuk mengelompokkan dan merapikan node-node terkait.
     *   **PassThrough Node**: Jembatan data untuk merapikan jalur koneksi yang rumit.
@@ -69,7 +69,12 @@ Project ini dibangun dengan **React**, **TypeScript**, **Vite**, dan **React Flo
 
 ## 🤝 Kontribusi (Roadmap)
 
-Versi saat ini (v0.1) masih dalam tahap pengembangan awal (Alpha).
+Versi saat ini (v0.2) mencakup:
+*   [x] Multi-column database filtering (NFR, Sector, Table, Type, Technology, Fuel, Abatement, Region, Pollutant)
+*   [x] Enhanced table preview with NFR column
+*   [x] Mouse wheel scroll fix for table modals
+*   [x] Collapsible advanced filters
+
 Fokus pengembangan selanjutnya:
 *   [ ] Export/Import project (JSON file).
 *   [ ] Reporting module (Generasi PDF/Excel).

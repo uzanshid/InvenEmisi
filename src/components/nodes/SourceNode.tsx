@@ -1,7 +1,7 @@
 import React, { memo, useState } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Minimize2, Maximize2 } from 'lucide-react';
 import type { SourceNodeData } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -26,6 +26,7 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
     const updateNodeData = useAppStore((state) => state.updateNodeData);
     const [inputValue, setInputValue] = useState(String(data.value || ''));
     const [isFocused, setIsFocused] = useState(false);
+    const [isMinimized, setIsMinimized] = useState(false);
 
     const hasValue = data.value !== undefined && data.value !== null && data.value !== 0;
     const isEmpty = !hasValue;
@@ -62,74 +63,83 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
                 } ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
         >
             {/* Header */}
-            <div className={`px-3 py-2 rounded-t-md ${isEmpty ? 'bg-yellow-500' : 'bg-blue-500'}`}>
+            <div className={`px-3 py-2 rounded-t-md ${isEmpty ? 'bg-yellow-500' : 'bg-blue-500'} flex items-center justify-between`}>
                 <input
                     type="text"
                     value={data.label}
                     onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                    className="w-full bg-transparent text-white font-semibold text-sm text-center outline-none placeholder-blue-200"
+                    className="flex-1 bg-transparent text-white font-semibold text-sm text-center outline-none placeholder-blue-200"
                     placeholder="Node Name"
                 />
+                <button
+                    onClick={() => setIsMinimized(!isMinimized)}
+                    className="text-white/80 hover:text-white transition-colors ml-2"
+                    title={isMinimized ? "Expand" : "Minimize"}
+                >
+                    {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
+                </button>
             </div>
 
             {/* Body */}
-            <div className="p-3 space-y-3">
-                {/* Warning */}
-                {isEmpty && (
-                    <div className="flex items-center gap-2 px-2 py-1.5 bg-yellow-100 rounded-md text-xs text-yellow-700">
-                        <AlertCircle size={14} />
-                        <span>Value belum diisi</span>
-                    </div>
-                )}
-
-                {/* Value Input */}
-                <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-500">Value</label>
-                    <input
-                        type="text"
-                        value={isFocused ? inputValue : (hasValue ? formatNumber(data.value) : '')}
-                        onChange={handleChange}
-                        onFocus={handleFocus}
-                        onBlur={handleBlur}
-                        className={`w-full px-2 py-1.5 text-sm border rounded-md bg-white focus:ring-1 outline-none ${isEmpty
-                            ? 'border-yellow-300 focus:border-yellow-400 focus:ring-yellow-400'
-                            : 'border-slate-200 focus:border-blue-400 focus:ring-blue-400'
-                            }`}
-                        placeholder="Masukkan nilai"
-                    />
-                </div>
-
-                {/* Unit Input */}
-                <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-500">Unit</label>
-                    <input
-                        type="text"
-                        value={data.unit}
-                        onChange={(e) => updateNodeData(id, { unit: e.target.value })}
-                        className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-md bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
-                        placeholder="kWh, L, kg..."
-                    />
-                </div>
-
-                {/* Output Handle */}
-                <div className="flex items-center justify-between pt-2 border-t border-blue-100">
-                    {outputValue && (
-                        <span className="text-xs font-mono text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
-                            {outputValue}
-                        </span>
+            {!isMinimized && (
+                <div className="p-3 space-y-3">
+                    {/* Warning */}
+                    {isEmpty && (
+                        <div className="flex items-center gap-2 px-2 py-1.5 bg-yellow-100 rounded-md text-xs text-yellow-700">
+                            <AlertCircle size={14} />
+                            <span>Value belum diisi</span>
+                        </div>
                     )}
-                    <div className="flex items-center justify-end gap-2 ml-auto">
-                        <span className="text-xs text-slate-500">{data.outputs[0]?.label || 'Output'}</span>
-                        <Handle
-                            type="source"
-                            position={Position.Right}
-                            id={data.outputs[0]?.id}
-                            className="!w-3 !h-3 !bg-blue-400 !border-2 !border-white hover:!bg-blue-600"
-                            style={{ top: 'auto', right: -6 }}
+
+                    {/* Value Input */}
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-slate-500">Value</label>
+                        <input
+                            type="text"
+                            value={isFocused ? inputValue : (hasValue ? formatNumber(data.value) : '')}
+                            onChange={handleChange}
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
+                            className={`w-full px-2 py-1.5 text-sm border rounded-md bg-white focus:ring-1 outline-none ${isEmpty
+                                ? 'border-yellow-300 focus:border-yellow-400 focus:ring-yellow-400'
+                                : 'border-slate-200 focus:border-blue-400 focus:ring-blue-400'
+                                }`}
+                            placeholder="Masukkan nilai"
                         />
                     </div>
+
+                    {/* Unit Input */}
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-slate-500">Unit</label>
+                        <input
+                            type="text"
+                            value={data.unit}
+                            onChange={(e) => updateNodeData(id, { unit: e.target.value })}
+                            className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-md bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                            placeholder="kWh, L, kg..."
+                        />
+                    </div>
+
+                    {/* Output Handle */}
+                    <div className="flex items-center justify-between pt-2 border-t border-blue-100">
+                        {outputValue && (
+                            <span className="text-xs font-mono text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+                                {outputValue}
+                            </span>
+                        )}
+                        <div className="flex items-center justify-end gap-2 ml-auto">
+                            <span className="text-xs text-slate-500">{data.outputs[0]?.label || 'Output'}</span>
+                            <Handle
+                                type="source"
+                                position={Position.Right}
+                                id={data.outputs[0]?.id}
+                                className="!w-3 !h-3 !bg-blue-400 !border-2 !border-white hover:!bg-blue-600"
+                                style={{ top: 'auto', right: -6 }}
+                            />
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

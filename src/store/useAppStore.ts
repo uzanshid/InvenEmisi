@@ -50,6 +50,43 @@ const createNodeData = (type: NodeType): NodeData => {
                 inputs: [{ id: generateId(), label: 'In' }],
                 outputs: [{ id: generateId(), label: 'Out' }],
             } as PassThroughNodeData;
+        case 'dataset':
+            return {
+                label: baseLabel,
+                type: 'dataset',
+                outputs: [{ id: generateId(), label: 'Output' }],
+            } as any; // Cast to any temporarily to avoid deep type issues until types are fully propagated
+        case 'filter':
+            return {
+                label: baseLabel,
+                type: 'filter',
+                operator: '>',
+                inputs: [{ id: generateId(), label: 'In' }],
+                outputs: [{ id: generateId(), label: 'Out' }],
+            } as any;
+        case 'tableMath':
+            return {
+                label: baseLabel,
+                type: 'tableMath',
+                status: 'idle',
+                inputs: [{ id: generateId(), label: 'In' }],
+                outputs: [{ id: generateId(), label: 'Out' }],
+            } as any;
+        case 'export':
+            return {
+                label: 'Export',
+                type: 'export',
+                exportFormat: 'xlsx',
+                inputs: [{ id: generateId(), label: 'Data' }],
+            } as any;
+        case 'transform':
+            return {
+                label: 'Transform',
+                type: 'transform',
+                operations: [],
+                inputs: [{ id: generateId(), label: 'In' }],
+                outputs: [{ id: generateId(), label: 'Out' }],
+            } as any;
         default:
             throw new Error(`Unknown node type: ${type}`);
     }
@@ -149,6 +186,10 @@ export const useAppStore = create<AppState>()(
                                 calculatedValue: result?.value ?? null,
                                 error: result?.error,
                                 hasCircularDependency: hasCircular,
+                                // Store resultUnit for process nodes
+                                ...(node.data.type === 'process' && result?.resultUnit
+                                    ? { resultUnit: result.resultUnit }
+                                    : {}),
                             },
                         };
                     }),
@@ -158,15 +199,19 @@ export const useAppStore = create<AppState>()(
             addNodeInput: (nodeId) => {
                 set((state) => ({
                     nodes: state.nodes.map((node) => {
-                        if (node.id !== nodeId || node.data.type !== 'process') return node;
-                        const processData = node.data as ProcessNodeData;
+                        if (node.id !== nodeId) return node;
+
+                        // Support both process and tableMath nodes
+                        if (node.data.type !== 'process' && node.data.type !== 'tableMath') return node;
+
+                        const currentInputs = 'inputs' in node.data ? node.data.inputs : [];
                         const newInput: HandleData = {
                             id: generateId(),
-                            label: String.fromCharCode(65 + processData.inputs.length),
+                            label: String.fromCharCode(65 + currentInputs.length), // A, B, C...
                         };
                         return {
                             ...node,
-                            data: { ...processData, inputs: [...processData.inputs, newInput] },
+                            data: { ...node.data, inputs: [...currentInputs, newInput] },
                         };
                     }),
                 }));
@@ -222,6 +267,43 @@ export const useAppStore = create<AppState>()(
                 set((state) => {
                     if (connection.source === connection.target) return state;
 
+                    const targetNode = state.nodes.find(n => n.id === connection.target);
+                    const sourceNode = state.nodes.find(n => n.id === connection.source);
+
+                    // Check if target node is process or tableMath and needs auto-input
+                    if (targetNode && (targetNode.data.type === 'process' || targetNode.data.type === 'tableMath')) {
+                        const inputs = 'inputs' in targetNode.data ? targetNode.data.inputs : [];
+
+                        // If targetHandle is undefined or doesn't exist in inputs, auto-add new input
+                        const handleExists = inputs.some((h: any) => h.id === connection.targetHandle);
+
+                        if (!connection.targetHandle || !handleExists) {
+                            // Auto-add new input with source node's label
+                            const sourceLabel = sourceNode?.data?.label || String.fromCharCode(65 + inputs.length);
+                            const newInputId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                            const newInput = { id: newInputId, label: sourceLabel };
+
+                            // Update node with new input
+                            const updatedNodes = state.nodes.map(n => {
+                                if (n.id === connection.target) {
+                                    return {
+                                        ...n,
+                                        data: { ...n.data, inputs: [...inputs, newInput] }
+                                    };
+                                }
+                                return n;
+                            });
+
+                            // Create connection to new input
+                            const newConnection = { ...connection, targetHandle: newInputId };
+                            return {
+                                nodes: updatedNodes,
+                                edges: addEdge(newConnection, state.edges)
+                            };
+                        }
+                    }
+
+                    // Standard connection logic
                     const targetHandleHasConnection = state.edges.some(
                         (edge) => edge.target === connection.target && edge.targetHandle === connection.targetHandle
                     );
@@ -231,6 +313,31 @@ export const useAppStore = create<AppState>()(
                         (edge) => edge.source === connection.source && edge.target === connection.target
                     );
                     if (sourceAlreadyConnectedToTarget) return state;
+
+                    // Auto-rename input handle to match source node label
+                    if (targetNode && sourceNode && 'inputs' in targetNode.data) {
+                        const inputs = targetNode.data.inputs as any[];
+                        const targetInput = inputs.find((h: any) => h.id === connection.targetHandle);
+
+                        if (targetInput && sourceNode.data?.label) {
+                            const updatedInputs = inputs.map((h: any) =>
+                                h.id === connection.targetHandle
+                                    ? { ...h, label: sourceNode.data.label }
+                                    : h
+                            );
+
+                            const updatedNodes = state.nodes.map(n =>
+                                n.id === connection.target
+                                    ? { ...n, data: { ...n.data, inputs: updatedInputs } }
+                                    : n
+                            );
+
+                            return {
+                                nodes: updatedNodes,
+                                edges: addEdge(connection, state.edges)
+                            };
+                        }
+                    }
 
                     return { edges: addEdge(connection, state.edges) };
                 });

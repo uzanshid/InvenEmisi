@@ -1,5 +1,5 @@
 /**
- * Script to convert CORINAIR CSV to JSON
+ * Script to convert EMEP/EEA CSV to JSON
  * Run with: npx tsx scripts/convertCsvToJson.ts
  */
 

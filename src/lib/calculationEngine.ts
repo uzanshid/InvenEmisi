@@ -5,6 +5,7 @@ import { math } from './mathConfig';
 export interface CalculationResult {
     nodeId: string;
     value: string | number | null;
+    resultUnit?: string;  // Extracted unit from calculation result
     error?: string;
 }
 
@@ -344,6 +345,7 @@ function getNodeOutputValue(
 
 /**
  * Tokenize a formula into variables, operators, numbers, and parentheses
+ * Supports both plain variables (A, B) and bracketed variables ([A], [test2.1])
  */
 function tokenize(formula: string): string[] {
     const tokens: string[] = [];
@@ -354,7 +356,17 @@ function tokenize(formula: string): string[] {
             i++;
             continue;
         }
-        if (/[A-Za-z]/.test(char)) {
+        // Handle bracketed variables like [VarName] or [test2.1]
+        if (char === '[') {
+            let token = '';
+            i++; // skip opening bracket
+            while (i < formula.length && formula[i] !== ']') {
+                token += formula[i];
+                i++;
+            }
+            if (i < formula.length) i++; // skip closing bracket
+            if (token) tokens.push(token);
+        } else if (/[A-Za-z]/.test(char)) {
             let token = '';
             while (i < formula.length && /[A-Za-z0-9_]/.test(formula[i])) {
                 token += formula[i];
@@ -584,12 +596,24 @@ export function runCalculations(
                 calculatedValues
             );
 
+            let resultUnit: string | undefined = undefined;
             if (value !== null && !error) {
                 const parsedValue = parseValueWithUnit(value);
                 calculatedValues.set(nodeId, parsedValue);
+
+                // Extract unit from parsed value
+                const numStr = formatUnitsWithExponents(parsedValue.numeratorUnits);
+                const denStr = formatUnitsWithExponents(parsedValue.denominatorUnits);
+                if (numStr && denStr) {
+                    resultUnit = `${numStr}/${denStr}`;
+                } else if (numStr) {
+                    resultUnit = numStr;
+                } else if (denStr) {
+                    resultUnit = `1/${denStr}`;
+                }
             }
 
-            results.set(nodeId, { nodeId, value, error });
+            results.set(nodeId, { nodeId, value, error, resultUnit });
         } else if (node.data.type === 'passthrough') {
             // PassThrough: pass the input value directly through
             const incomingEdges = edges.filter((e) => e.target === nodeId);

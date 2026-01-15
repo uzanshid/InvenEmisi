@@ -1,6 +1,6 @@
 import type { Node, Edge, XYPosition, Connection, OnNodesChange, OnEdgesChange } from 'reactflow';
 
-export type NodeType = 'source' | 'process' | 'factor' | 'group' | 'passthrough';
+export type NodeType = 'source' | 'process' | 'factor' | 'group' | 'passthrough' | 'dataset' | 'filter' | 'tableMath' | 'export' | 'transform';
 
 export interface HandleData {
     id: string;
@@ -42,6 +42,7 @@ export interface FactorNodeData extends BaseNodeData {
 export interface ProcessNodeData extends BaseNodeData {
     type: 'process';
     formula: string;
+    resultUnit?: string;  // Calculated unit from formula
     inputs: HandleData[];
     outputs: HandleData[];
 }
@@ -60,7 +61,57 @@ export interface PassThroughNodeData extends BaseNodeData {
     outputs: HandleData[];
 }
 
-export type NodeData = SourceNodeData | FactorNodeData | ProcessNodeData | GroupNodeData | PassThroughNodeData;
+// --- BATCH NODES (Phase 7) ---
+
+// Dataset Node: Import CSV/XLSX
+export interface DatasetNodeData extends BaseNodeData {
+    type: 'dataset';
+    fileName?: string;
+    rowCount?: number;
+    outputs: HandleData[];
+}
+
+// Filter Node: Filter rows
+export interface FilterNodeData extends BaseNodeData {
+    type: 'filter';
+    column?: string;
+    operator?: '>' | '<' | '==' | '>=' | '<=' | '!=';
+    value?: string | number;
+    inputs: HandleData[];
+    outputs: HandleData[];
+}
+
+// Table Math Node: Add calculated column
+export interface TableMathNodeData extends BaseNodeData {
+    type: 'tableMath';
+    newColumnName?: string;
+    formula?: string;
+    status?: 'idle' | 'processing' | 'done' | 'error';
+    inputs: HandleData[];
+    outputs: HandleData[];
+}
+
+// Export Node: Final output with unit check and export
+export interface ExportNodeData extends BaseNodeData {
+    type: 'export';
+    exportFormat?: 'csv' | 'xlsx';
+    inputs: HandleData[];
+}
+
+// Transform Node: Column operations (delete, rename, select)
+export interface TransformNodeData extends BaseNodeData {
+    type: 'transform';
+    operations?: {
+        type: 'delete' | 'rename' | 'select';
+        column?: string;
+        newName?: string;
+        selectedColumns?: string[];
+    }[];
+    inputs: HandleData[];
+    outputs: HandleData[];
+}
+
+export type NodeData = SourceNodeData | FactorNodeData | ProcessNodeData | GroupNodeData | PassThroughNodeData | DatasetNodeData | FilterNodeData | TableMathNodeData | ExportNodeData | TransformNodeData;
 
 export interface AppState {
     nodes: Node<NodeData>[];

@@ -17,7 +17,13 @@ import FactorNode from './nodes/FactorNode';
 import ProcessNode from './nodes/ProcessNode';
 import GroupNode from './nodes/GroupNode';
 import PassThroughNode from './nodes/PassThroughNode';
+import DatasetNode from './nodes/DatasetNode';
+import FilterNode from './nodes/FilterNode';
+import TableMathNode from './nodes/TableMathNode';
+import ExportNode from './nodes/ExportNode';
+import TransformNode from './nodes/TransformNode';
 import { ContextMenu } from './ContextMenu';
+import { GlobalDataModal } from './GlobalDataModal';
 
 interface ContextMenuState {
     x: number;
@@ -56,6 +62,11 @@ const CanvasMain = () => {
         process: ProcessNode,
         group: GroupNode,
         passthrough: PassThroughNode,
+        dataset: DatasetNode,
+        filter: FilterNode,
+        tableMath: TableMathNode,
+        export: ExportNode,
+        transform: TransformNode,
     }), []);
 
     // Keyboard shortcuts
@@ -227,6 +238,9 @@ const CanvasMain = () => {
                             case 'process': return '#8b5cf6';
                             case 'group': return '#6366f1';
                             case 'passthrough': return '#a855f7';
+                            case 'dataset': return '#f97316';
+                            case 'filter': return '#eab308';
+                            case 'tableMath': return '#581c87';
                             default: return '#cbd5e1';
                         }
                     }}
@@ -246,6 +260,7 @@ const CanvasMain = () => {
                     onBringToFront={contextMenu.type === 'node' ? handleBringToFront : undefined}
                 />
             )}
+            <GlobalDataModal />
         </div>
     );
 };
