@@ -1,6 +1,6 @@
 import type { Node, Edge, XYPosition, Connection, OnNodesChange, OnEdgesChange } from 'reactflow';
 
-export type NodeType = 'source' | 'process' | 'factor' | 'group' | 'passthrough' | 'dataset' | 'filter' | 'tableMath' | 'export' | 'transform';
+export type NodeType = 'source' | 'process' | 'factor' | 'group' | 'passthrough' | 'dataset' | 'filter' | 'tableMath' | 'export' | 'transform' | 'join';
 
 export interface HandleData {
     id: string;
@@ -86,6 +86,7 @@ export interface TableMathNodeData extends BaseNodeData {
     type: 'tableMath';
     newColumnName?: string;
     formula?: string;
+    unitOverride?: string;
     status?: 'idle' | 'processing' | 'done' | 'error';
     inputs: HandleData[];
     outputs: HandleData[];
@@ -111,7 +112,18 @@ export interface TransformNodeData extends BaseNodeData {
     outputs: HandleData[];
 }
 
-export type NodeData = SourceNodeData | FactorNodeData | ProcessNodeData | GroupNodeData | PassThroughNodeData | DatasetNodeData | FilterNodeData | TableMathNodeData | ExportNodeData | TransformNodeData;
+// Join Node: Merge two dataframes (Phase 9)
+export interface JoinNodeData extends BaseNodeData {
+    type: 'join';
+    leftKey?: string;           // Key column from main data
+    rightKey?: string;          // Key column from lookup data
+    targetColumns?: string[];   // Columns to pull from lookup data
+    joinType?: 'left';          // Currently only LEFT JOIN supported
+    inputs: HandleData[];       // [0] = main data, [1] = lookup data
+    outputs: HandleData[];
+}
+
+export type NodeData = SourceNodeData | FactorNodeData | ProcessNodeData | GroupNodeData | PassThroughNodeData | DatasetNodeData | FilterNodeData | TableMathNodeData | ExportNodeData | TransformNodeData | JoinNodeData;
 
 export interface AppState {
     nodes: Node<NodeData>[];

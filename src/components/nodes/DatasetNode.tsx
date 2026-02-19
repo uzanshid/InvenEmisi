@@ -57,7 +57,7 @@ const DatasetNode: React.FC<NodeProps<DatasetNodeData>> = ({ id, data, selected 
     };
 
     return (
-        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-orange-500' : 'border-slate-200'} ${isMinimized ? 'w-[180px]' : 'w-[280px]'}`}>
+        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-orange-500' : 'border-slate-200'} ${isMinimized ? 'w-fit min-w-[180px]' : 'w-[280px]'}`}>
             {/* Header - Editable Title */}
             <div className="bg-orange-500 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-white flex-1">
@@ -130,19 +130,28 @@ const DatasetNode: React.FC<NodeProps<DatasetNodeData>> = ({ id, data, selected 
 
                             {/* Unit Configuration Panel */}
                             {showUnitConfig && nodeData?.schema && nodeData.schema.length > 0 && (
-                                <div className="p-2 bg-orange-50 rounded border border-orange-100 space-y-2 max-h-40 overflow-y-auto">
-                                    <p className="text-[10px] font-bold text-orange-600 uppercase">Column Units</p>
+                                <div className="p-2 bg-orange-50 rounded border border-orange-100 space-y-1.5 max-h-48 overflow-y-auto" onWheel={(e) => e.stopPropagation()}>
+                                    <p className="text-[10px] font-bold text-orange-600 uppercase flex justify-between items-center">
+                                        <span>Column Units</span>
+                                        <span className="text-[9px] font-normal text-orange-400 italic">blank = unitless</span>
+                                    </p>
                                     {nodeData.schema.map(col => (
                                         <div key={col.id} className="flex items-center gap-2">
+                                            <span className={`text-[9px] px-1 py-0.5 rounded font-bold ${col.type === 'number' ? 'bg-blue-100 text-blue-500' : 'bg-slate-100 text-slate-400'}`}>
+                                                {col.type === 'number' ? 'NUM' : 'TXT'}
+                                            </span>
                                             <span className="text-xs text-slate-600 truncate flex-1" title={col.name}>
-                                                {col.name.length > 15 ? col.name.slice(0, 15) + '...' : col.name}
+                                                {col.name.length > 12 ? col.name.slice(0, 12) + '…' : col.name}
                                             </span>
                                             <input
                                                 type="text"
                                                 value={col.unit || ''}
                                                 onChange={(e) => handleUnitChange(col.id, e.target.value)}
-                                                placeholder="unit"
-                                                className="w-16 text-[10px] px-1.5 py-0.5 border border-slate-200 rounded focus:outline-none focus:border-orange-400"
+                                                placeholder="—"
+                                                className={`w-16 text-[10px] px-1.5 py-0.5 rounded focus:outline-none transition-colors ${col.unit
+                                                    ? 'border border-orange-300 bg-orange-50 text-orange-700 focus:border-orange-500'
+                                                    : 'border border-dashed border-slate-200 bg-white text-slate-400 focus:border-orange-400'
+                                                    }`}
                                             />
                                         </div>
                                     ))}

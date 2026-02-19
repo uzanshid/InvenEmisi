@@ -22,6 +22,7 @@ import FilterNode from './nodes/FilterNode';
 import TableMathNode from './nodes/TableMathNode';
 import ExportNode from './nodes/ExportNode';
 import TransformNode from './nodes/TransformNode';
+import JoinNode from './nodes/JoinNode';
 import { ContextMenu } from './ContextMenu';
 import { GlobalDataModal } from './GlobalDataModal';
 
@@ -67,6 +68,7 @@ const CanvasMain = () => {
         tableMath: TableMathNode,
         export: ExportNode,
         transform: TransformNode,
+        join: JoinNode,
     }), []);
 
     // Keyboard shortcuts
@@ -80,7 +82,14 @@ const CanvasMain = () => {
                 event.preventDefault();
                 useAppStore.temporal.getState().redo();
             }
-            if (event.key === 'Delete') {
+            if (event.key === 'Delete' || event.key === 'Backspace') {
+                // Don't delete nodes if user is typing in an input/textarea
+                const active = document.activeElement;
+                const isEditing = active instanceof HTMLInputElement ||
+                    active instanceof HTMLTextAreaElement ||
+                    (active instanceof HTMLElement && active.isContentEditable);
+                if (isEditing) return;
+
                 const selectedNodes = getNodes().filter((node) => node.selected);
                 const selectedEdges = getEdges().filter((edge) => edge.selected);
                 if (selectedNodes.length > 0 || selectedEdges.length > 0) {
@@ -218,7 +227,7 @@ const CanvasMain = () => {
                 onEdgeContextMenu={onEdgeContextMenu}
                 onPaneContextMenu={onPaneContextMenu}
                 onPaneClick={closeContextMenu}
-                deleteKeyCode={['Backspace', 'Delete']}
+                deleteKeyCode={null}
                 selectionMode={SelectionMode.Partial}
                 selectionOnDrag
                 panOnScroll
@@ -241,6 +250,7 @@ const CanvasMain = () => {
                             case 'dataset': return '#f97316';
                             case 'filter': return '#eab308';
                             case 'tableMath': return '#581c87';
+                            case 'join': return '#a855f7';
                             default: return '#cbd5e1';
                         }
                     }}

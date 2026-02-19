@@ -62,7 +62,7 @@ const ExportNode: React.FC<NodeProps<ExportNodeData>> = ({ id, data, selected })
     };
 
     return (
-        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-emerald-600' : 'border-slate-200'} ${isMinimized ? 'w-[160px]' : 'w-[280px]'}`}>
+        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-emerald-600' : 'border-slate-200'} ${isMinimized ? 'w-fit min-w-[160px]' : 'w-[280px]'}`}>
             {/* Header */}
             <div className="bg-emerald-600 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-white flex-1">

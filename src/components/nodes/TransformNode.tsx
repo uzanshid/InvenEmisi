@@ -6,6 +6,7 @@ import type { TransformNodeData } from '../../types';
 import { useBatchVisualStore } from '../../store/useBatchVisualStore';
 import { useBatchDataStore } from '../../store/useBatchDataStore';
 import { useAppStore } from '../../store/useAppStore';
+import { useCascadeRun } from '../../hooks/useCascadeRun';
 
 interface Operation {
     type: 'delete' | 'rename' | 'select';
@@ -19,6 +20,8 @@ const TransformNode: React.FC<NodeProps<TransformNodeData>> = ({ id, data, selec
     const updateNodeData = useAppStore((state) => state.updateNodeData);
     const [isMinimized, setIsMinimized] = useState(false);
     const [newOpType, setNewOpType] = useState<'delete' | 'rename' | 'select'>('delete');
+
+    useCascadeRun(id);
 
     const runTransform = useBatchDataStore((state: any) => state.runTransform);
     const nodeStoreData = useBatchDataStore((state: any) => state.getNodeData(id));
@@ -69,7 +72,7 @@ const TransformNode: React.FC<NodeProps<TransformNodeData>> = ({ id, data, selec
     };
 
     return (
-        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-cyan-600' : 'border-slate-200'} ${isMinimized ? 'w-[160px]' : 'w-[280px]'}`}>
+        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-cyan-600' : 'border-slate-200'} ${isMinimized ? 'w-fit min-w-[160px]' : 'w-[280px]'}`}>
             {/* Header */}
             <div className="bg-cyan-600 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-white flex-1">

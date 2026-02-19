@@ -151,25 +151,41 @@ export function deriveUnitFromFormula(
     columnUnits: Record<string, string>,
     scalarInputs: Record<string, { value: number; unit: string }>
 ): { unit: string; warning?: string } {
-    // Extract all [ColumnName] references
-    const columnRefs = formula.match(/\[([^\]]+)\]/g) || [];
+    // Phase 9: Extract aggregate references like $SUM_[CO2]
+    const aggregateRefs = formula.match(/\$[A-Z]+_\[([^\]]+)\]/g) || [];
+    const regularRefs = formula.match(/(?<!\$[A-Z]{2,}_)\[([^\]]+)\]/g) || [];
+
+    const columnRefs = [...aggregateRefs, ...regularRefs];
 
     if (columnRefs.length === 0) {
         return { unit: 'unitless' };
     }
 
-    // Build unit map for all referenced columns/scalars
+    // Build unit map for all referenced columns/scalars/aggregates
     const refUnits: Record<string, UnitExpression> = {};
 
     for (const ref of columnRefs) {
-        const name = ref.slice(1, -1); // Remove [ ]
+        let name: string;
 
-        if (columnUnits[name]) {
-            refUnits[name] = parseUnit(columnUnits[name]);
-        } else if (scalarInputs[name]) {
-            refUnits[name] = parseUnit(scalarInputs[name].unit);
+        // Check if it's an aggregate like $SUM_[CO2]
+        const aggMatch = ref.match(/\$[A-Z]+_\[([^\]]+)\]/);
+        if (aggMatch) {
+            name = aggMatch[1]; // Extract column name from aggregate
+            // Aggregates inherit the unit of their column
+            if (columnUnits[name]) {
+                refUnits[ref] = parseUnit(columnUnits[name]);
+            } else {
+                refUnits[ref] = { numerator: [], denominator: [] };
+            }
         } else {
-            refUnits[name] = { numerator: [], denominator: [] };
+            name = ref.slice(1, -1); // Remove [ ]
+            if (columnUnits[name]) {
+                refUnits[name] = parseUnit(columnUnits[name]);
+            } else if (scalarInputs[name]) {
+                refUnits[name] = parseUnit(scalarInputs[name].unit);
+            } else {
+                refUnits[name] = { numerator: [], denominator: [] };
+            }
         }
     }
 

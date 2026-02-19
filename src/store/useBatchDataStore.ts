@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import Papa from 'papaparse';
-import { executeBatchFormula } from '../lib/batchCalculationEngine';
+import { executeBatchFormula, executeJoin } from '../lib/batchCalculationEngine';
 import { read, utils } from 'xlsx';
 
 export interface ColumnMetadata {
@@ -27,10 +27,11 @@ interface BatchDataStore {
     // Actions
     ingestFile: (nodeId: string, file: File) => Promise<void>;
     getNodeData: (nodeId: string) => BatchNodeData | undefined;
-    runMath: (nodeId: string, sourceNodeId: string, formula: string, newColName: string, scalarInputs?: Record<string, { value: number, unit: string }>) => void;
+    runMath: (nodeId: string, sourceNodeId: string, formula: string, newColName: string, scalarInputs?: Record<string, { value: number, unit: string }>, unitOverride?: string) => void;
     runFilter: (nodeId: string, sourceNodeId: string, criteria: any) => void;
     setColumnUnit: (nodeId: string, columnId: string, unit: string) => void;
     runTransform: (nodeId: string, sourceNodeId: string, operations: any[]) => void;
+    executeJoinNode: (nodeId: string) => void; // Phase 9
 }
 
 export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
@@ -167,7 +168,7 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
         });
     },
 
-    runMath: (nodeId, sourceNodeId, formula, newColName, scalarInputs = {}) => {
+    runMath: (nodeId, sourceNodeId, formula, newColName, scalarInputs = {}, unitOverride) => {
         const sourceNode = get().nodes[sourceNodeId];
 
         if (!sourceNode || !sourceNode.rawData || sourceNode.rawData.length === 0) {
@@ -212,7 +213,7 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
             if (result.success && result.data) {
                 const newSchema = [
                     ...sourceNode.schema,
-                    { id: newColName, name: newColName, type: 'number', unit: result.derivedUnit }
+                    { id: newColName, name: newColName, type: 'number', unit: unitOverride?.trim() || result.derivedUnit }
                 ] as ColumnMetadata[];
 
                 set((state) => ({
@@ -451,6 +452,144 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
                             schema: [],
                             status: 'ERROR',
                             errorDetails: { rowIndex: -1, message: "Transform failed: " + error.message },
+                            rowCount: 0
+                        }
+                    }
+                }));
+            }
+        }, 100);
+    },
+
+    executeJoinNode: (nodeId) => {
+        // Get the Join Node data from useAppStore
+        const joinNode = (window as any).__appStore?.getState().nodes.find((n: any) => n.id === nodeId);
+        if (!joinNode || joinNode.type !== 'join') {
+            console.error('Join node not found');
+            return;
+        }
+
+        const joinData = joinNode.data;
+        const mainInputId = joinData.inputs[0]?.id;
+        const lookupInputId = joinData.inputs[1]?.id;
+
+        if (!mainInputId || !lookupInputId) {
+            set((state) => ({
+                nodes: {
+                    ...state.nodes,
+                    [nodeId]: {
+                        rawData: [],
+                        schema: [],
+                        status: 'ERROR',
+                        errorDetails: { rowIndex: -1, message: 'Both inputs must be connected' },
+                        rowCount: 0
+                    }
+                }
+            }));
+            return;
+        }
+
+        const mainData = get().nodes[mainInputId];
+        const lookupData = get().nodes[lookupInputId];
+
+        if (!mainData || !lookupData) {
+            set((state) => ({
+                nodes: {
+                    ...state.nodes,
+                    [nodeId]: {
+                        rawData: [],
+                        schema: [],
+                        status: 'ERROR',
+                        errorDetails: { rowIndex: -1, message: 'Source data not found' },
+                        rowCount: 0
+                    }
+                }
+            }));
+            return;
+        }
+
+        if (!joinData.leftKey || !joinData.rightKey || !joinData.targetColumns || joinData.targetColumns.length === 0) {
+            set((state) => ({
+                nodes: {
+                    ...state.nodes,
+                    [nodeId]: {
+                        rawData: [],
+                        schema: [],
+                        status: 'ERROR',
+                        errorDetails: { rowIndex: -1, message: 'Join configuration incomplete' },
+                        rowCount: 0
+                    }
+                }
+            }));
+            return;
+        }
+
+        set((state) => ({
+            nodes: {
+                ...state.nodes,
+                [nodeId]: {
+                    rawData: [],
+                    schema: [],
+                    status: 'CALCULATING',
+                    rowCount: 0
+                }
+            }
+        }));
+
+        setTimeout(() => {
+            const result = executeJoin({
+                mainData: mainData.rawData,
+                lookupData: lookupData.rawData,
+                leftKey: joinData.leftKey!,
+                rightKey: joinData.rightKey!,
+                targetColumns: joinData.targetColumns!
+            });
+
+            if (result.success && result.data) {
+                // Build new schema by merging
+                const newCols: ColumnMetadata[] = [];
+
+                // Add target columns from lookup
+                joinData.targetColumns!.forEach((col: string) => {
+                    const lookupCol = lookupData.schema.find(c => c.id === col);
+                    let colName = col;
+
+                    // Check for collision
+                    if (mainData.schema.some(c => c.id === col)) {
+                        colName = `${col}_lookup`;
+                    }
+
+                    if (lookupCol) {
+                        newCols.push({
+                            id: colName,
+                            name: colName,
+                            type: lookupCol.type,
+                            unit: lookupCol.unit
+                        });
+                    }
+                });
+
+                const finalSchema = [...mainData.schema, ...newCols];
+
+                set((state) => ({
+                    nodes: {
+                        ...state.nodes,
+                        [nodeId]: {
+                            rawData: result.data!,
+                            schema: finalSchema,
+                            rowCount: result.data!.length,
+                            status: 'SUCCESS'
+                        }
+                    }
+                }));
+            } else {
+                set((state) => ({
+                    nodes: {
+                        ...state.nodes,
+                        [nodeId]: {
+                            rawData: [],
+                            schema: [],
+                            status: 'ERROR',
+                            errorDetails: result.error,
                             rowCount: 0
                         }
                     }

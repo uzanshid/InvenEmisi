@@ -27,6 +27,7 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
     const [inputValue, setInputValue] = useState(String(data.value || ''));
     const [isFocused, setIsFocused] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
+    const [formulaExpr, setFormulaExpr] = useState<string | null>(null); // stores "=1/365" etc.
 
     const hasValue = data.value !== undefined && data.value !== null && data.value !== 0;
     const isEmpty = !hasValue;
@@ -38,28 +39,61 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
 
     const handleFocus = () => {
         setIsFocused(true);
-        // Show raw number without formatting when editing
-        setInputValue(data.value === 0 ? '' : String(data.value));
+        // If there's a stored formula, show it when editing
+        if (formulaExpr) {
+            setInputValue(formulaExpr);
+        } else {
+            setInputValue(data.value === 0 ? '' : String(data.value));
+        }
     };
 
     const handleBlur = () => {
         setIsFocused(false);
-        const parsed = parseNumber(inputValue);
-        updateNodeData(id, { value: parsed });
-        setInputValue(String(parsed || ''));
+        const rawVal = inputValue.trim();
+
+        // Formula evaluation: if starts with "=", evaluate it
+        if (rawVal.startsWith('=')) {
+            try {
+                const expr = rawVal.slice(1).trim();
+                if (!expr) {
+                    setFormulaExpr(null);
+                    return;
+                }
+                // Safe evaluation using Function constructor for basic math
+                const result = new Function(`return (${expr})`)();
+                if (typeof result === 'number' && isFinite(result)) {
+                    setFormulaExpr(rawVal); // store the formula
+                    updateNodeData(id, { value: result });
+                    setInputValue(rawVal);
+                } else {
+                    // Invalid result, keep old value
+                    setFormulaExpr(null);
+                    setInputValue(String(data.value || ''));
+                }
+            } catch {
+                // Eval failed, keep old value
+                setFormulaExpr(null);
+                setInputValue(String(data.value || ''));
+            }
+        } else {
+            setFormulaExpr(null);
+            const parsed = parseNumber(rawVal);
+            updateNodeData(id, { value: parsed });
+            setInputValue(String(parsed || ''));
+        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
-        // Allow empty, numbers, minus, decimal
-        if (val === '' || /^-?\d*[,.]?\d*$/.test(val)) {
+        // Allow "=" formula prefix, or normal numeric input
+        if (val.startsWith('=') || val === '' || val === '-' || /^-?\d*[,.]?\d*([eE][+-]?\d*)?$/.test(val)) {
             setInputValue(val);
         }
     };
 
     return (
         <div
-            className={`min-w-[200px] rounded-lg border-2 shadow-lg ${isEmpty ? 'bg-yellow-50 border-yellow-300' : 'bg-blue-50 border-blue-200'
+            className={`${isMinimized ? 'w-fit min-w-[120px]' : 'min-w-[200px]'} rounded-lg border-2 shadow-lg ${isEmpty ? 'bg-yellow-50 border-yellow-300' : 'bg-blue-50 border-blue-200'
                 } ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
         >
             {/* Header */}
@@ -80,7 +114,16 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
                 </button>
             </div>
 
-            {/* Body */}
+            {/* Minimized Summary */}
+            {isMinimized && outputValue && (
+                <div className="px-3 py-1.5 text-center">
+                    <span className="text-xs font-mono text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+                        {outputValue}
+                    </span>
+                </div>
+            )}
+
+            {/* Body - Hidden when minimized */}
             {!isMinimized && (
                 <div className="p-3 space-y-3">
                     {/* Warning */}
@@ -93,10 +136,13 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
 
                     {/* Value Input */}
                     <div className="space-y-1">
-                        <label className="text-xs font-medium text-slate-500">Value</label>
+                        <label className="text-xs font-medium text-slate-500 flex justify-between">
+                            <span>Value</span>
+                            <span className="text-[9px] text-slate-400 italic">ketik = untuk formula</span>
+                        </label>
                         <input
                             type="text"
-                            value={isFocused ? inputValue : (hasValue ? formatNumber(data.value) : '')}
+                            value={isFocused ? inputValue : (formulaExpr ? formatNumber(data.value) : (hasValue ? formatNumber(data.value) : ''))}
                             onChange={handleChange}
                             onFocus={handleFocus}
                             onBlur={handleBlur}
@@ -104,8 +150,14 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
                                 ? 'border-yellow-300 focus:border-yellow-400 focus:ring-yellow-400'
                                 : 'border-slate-200 focus:border-blue-400 focus:ring-blue-400'
                                 }`}
-                            placeholder="Masukkan nilai"
+                            placeholder="123 atau =1/365"
                         />
+                        {/* Formula hint */}
+                        {formulaExpr && !isFocused && (
+                            <p className="text-[9px] text-blue-500 font-mono bg-blue-50 px-1.5 py-0.5 rounded">
+                                {formulaExpr}
+                            </p>
+                        )}
                     </div>
 
                     {/* Unit Input */}
@@ -120,26 +172,26 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
                         />
                     </div>
 
-                    {/* Output Handle */}
-                    <div className="flex items-center justify-between pt-2 border-t border-blue-100">
-                        {outputValue && (
+                    {/* Output Value Display */}
+                    {outputValue && (
+                        <div className="flex items-center justify-between pt-2 border-t border-blue-100">
                             <span className="text-xs font-mono text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
                                 {outputValue}
                             </span>
-                        )}
-                        <div className="flex items-center justify-end gap-2 ml-auto">
                             <span className="text-xs text-slate-500">{data.outputs[0]?.label || 'Output'}</span>
-                            <Handle
-                                type="source"
-                                position={Position.Right}
-                                id={data.outputs[0]?.id}
-                                className="!w-3 !h-3 !bg-blue-400 !border-2 !border-white hover:!bg-blue-600"
-                                style={{ top: 'auto', right: -6 }}
-                            />
                         </div>
-                    </div>
+                    )}
                 </div>
             )}
+
+            {/* Output Handle — ALWAYS rendered, even when minimized */}
+            <Handle
+                type="source"
+                position={Position.Right}
+                id={data.outputs[0]?.id}
+                className="!w-3 !h-3 !bg-blue-400 !border-2 !border-white hover:!bg-blue-600"
+                style={{ top: '50%', right: -6 }}
+            />
         </div>
     );
 };

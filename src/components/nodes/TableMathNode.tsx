@@ -1,11 +1,14 @@
 import React, { memo, useRef, useState, useCallback } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import type { NodeProps } from 'reactflow';
-import { Calculator, Eye, Plus, Minimize2, Maximize2, ChevronDown, Zap } from 'lucide-react';
+import { Calculator, Eye, Plus, Minimize2, Maximize2, ChevronDown, Zap, HelpCircle } from 'lucide-react';
 import type { TableMathNodeData, HandleData } from '../../types';
 import { useBatchVisualStore } from '../../store/useBatchVisualStore';
 import { useBatchDataStore } from '../../store/useBatchDataStore';
 import { useAppStore } from '../../store/useAppStore';
+import { FormulaHelpDialog } from '../FormulaHelpDialog';
+import { FormulaInput } from '../FormulaInput';
+import { useCascadeRun } from '../../hooks/useCascadeRun';
 
 // Editable Label Component
 const EditableLabel: React.FC<{ value: string; onSave: (v: string) => void }> = ({ value, onSave }) => {
@@ -50,6 +53,9 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [isMinimized, setIsMinimized] = useState(false);
     const [selectedInputIdx, setSelectedInputIdx] = useState(0);
+    const [showHelp, setShowHelp] = useState(false);
+
+    useCascadeRun(id);
 
     const runMath = useBatchDataStore((state: any) => state.runMath);
     const nodeStoreData = useBatchDataStore((state: any) => state.getNodeData(id));
@@ -74,7 +80,7 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
         if (nodeType === 'source' || nodeType === 'factor' || nodeType === 'process') {
             // For process nodes, use calculatedValue; for source/factor use value
             const scalarValue = nodeType === 'process'
-                ? (Number(sourceNode.data?.calculatedValue) || 0)
+                ? (parseFloat(String(sourceNode.data?.calculatedValue)) || 0)
                 : (sourceNode.data?.value ?? 0);
 
             // For process nodes, we need to get the result unit from the calculation
@@ -145,7 +151,7 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
                 scalarInputs[scalar.label] = { value: scalar.value, unit: scalar.unit };
             });
 
-            runMath(id, firstBatchSource.nodeId, data.formula, data.newColumnName, scalarInputs);
+            runMath(id, firstBatchSource.nodeId, data.formula, data.newColumnName, scalarInputs, data.unitOverride);
         }
     };
 
@@ -199,7 +205,7 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
     const headerHeight = 36;
 
     return (
-        <div className={`bg-white rounded-lg shadow-md overflow-visible border-2 transition-all duration-200 ${selected ? 'border-purple-800' : 'border-slate-200'} ${isMinimized ? 'w-[180px]' : 'w-[300px]'}`}>
+        <div className={`bg-white rounded-lg shadow-md overflow-visible border-2 transition-all duration-200 ${selected ? 'border-purple-800' : 'border-slate-200'} ${isMinimized ? 'w-fit min-w-[180px]' : 'w-[300px]'}`}>
             {/* Input Handles - Always rendered */}
             {data.inputs.map((input: HandleData, index: number) => (
                 <Handle
@@ -340,14 +346,42 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
 
                     {/* Formula */}
                     <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Formula</label>
-                        <textarea
-                            ref={textareaRef}
-                            className="w-full text-xs font-mono border border-slate-200 rounded p-1.5 focus:outline-none focus:border-purple-800 resize-none h-16 bg-slate-50"
-                            placeholder="[ColumnA] * [FactorNode]"
+                        <div className="flex items-center justify-between mb-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">Formula</label>
+                            <button
+                                onClick={() => setShowHelp(true)}
+                                className="flex items-center gap-1 text-xs text-slate-500 hover:text-purple-600 transition-colors"
+                                title="Formula Help"
+                            >
+                                <HelpCircle size={12} />
+                                <span className="text-[10px]">Help</span>
+                            </button>
+                        </div>
+                        <FormulaInput
                             value={data.formula || ''}
-                            onChange={(e) => updateNodeData(id, { formula: e.target.value })}
+                            onChange={(val) => updateNodeData(id, { formula: val })}
+                            columns={availableColumns}
+                            scalars={scalarSources.map(s => ({ label: s.label, unit: s.unit }))}
+                            textareaRef={textareaRef}
                         />
+                    </div>
+
+                    {/* Unit Override */}
+                    <div>
+                        <label className="text-[10px] font-bold text-amber-500 uppercase mb-1 block">Unit (Optional)</label>
+                        <input
+                            type="text"
+                            className={`w-full text-xs font-mono px-2 py-1 rounded focus:outline-none transition-colors ${data.unitOverride?.trim()
+                                ? 'border-2 border-amber-400 bg-amber-50 text-amber-800 focus:border-amber-500'
+                                : 'border border-dashed border-slate-300 bg-slate-50 text-slate-500 focus:border-amber-400'
+                                }`}
+                            placeholder="e.g. kg, ton/year — auto if empty"
+                            value={data.unitOverride || ''}
+                            onChange={(e) => updateNodeData(id, { unitOverride: e.target.value })}
+                        />
+                        {!data.unitOverride?.trim() && derivedUnit && (
+                            <p className="text-[9px] text-slate-400 mt-0.5 italic">Auto: {derivedUnit}</p>
+                        )}
                     </div>
 
                     {/* Run Button */}
@@ -360,9 +394,19 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
                     </button>
 
                     {/* Result Unit Display */}
-                    {status === 'SUCCESS' && derivedUnit && (
-                        <div className="text-center text-[10px] text-green-600 font-medium">
-                            Result Unit: <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded">{derivedUnit}</span>
+                    {status === 'SUCCESS' && (derivedUnit || data.unitOverride?.trim()) && (
+                        <div className="text-center text-[10px] font-medium">
+                            {data.unitOverride?.trim() ? (
+                                <span className="text-amber-600">
+                                    Unit: <span className="font-mono bg-amber-100 px-1.5 py-0.5 rounded">{data.unitOverride.trim()}</span>
+                                    <span className="text-slate-400 ml-1">(manual)</span>
+                                </span>
+                            ) : derivedUnit ? (
+                                <span className="text-green-600">
+                                    Unit: <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded">{derivedUnit}</span>
+                                    <span className="text-slate-400 ml-1">(auto)</span>
+                                </span>
+                            ) : null}
                         </div>
                     )}
 
@@ -389,6 +433,9 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
                 className="!w-3 !h-3 !bg-purple-900 !border-2 !border-white hover:!bg-purple-700"
                 style={{ top: isMinimized ? headerHeight / 2 : '50%', right: -6 }}
             />
+
+            {/* Formula Help Dialog */}
+            <FormulaHelpDialog isOpen={showHelp} onClose={() => setShowHelp(false)} />
         </div>
     );
 };

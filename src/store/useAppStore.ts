@@ -87,6 +87,17 @@ const createNodeData = (type: NodeType): NodeData => {
                 inputs: [{ id: generateId(), label: 'In' }],
                 outputs: [{ id: generateId(), label: 'Out' }],
             } as any;
+        case 'join':
+            return {
+                label: 'Join',
+                type: 'join',
+                joinType: 'left',
+                inputs: [
+                    { id: generateId(), label: 'Main' },
+                    { id: generateId(), label: 'Lookup' }
+                ],
+                outputs: [{ id: generateId(), label: 'Joined' }],
+            } as any;
         default:
             throw new Error(`Unknown node type: ${type}`);
     }

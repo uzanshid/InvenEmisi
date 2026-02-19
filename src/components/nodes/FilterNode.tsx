@@ -6,11 +6,14 @@ import type { FilterNodeData } from '../../types';
 import { useBatchVisualStore } from '../../store/useBatchVisualStore';
 import { useAppStore } from '../../store/useAppStore';
 import { useBatchDataStore } from '../../store/useBatchDataStore';
+import { useCascadeRun } from '../../hooks/useCascadeRun';
 
 const FilterNode: React.FC<NodeProps<FilterNodeData>> = ({ id, data, selected }) => {
     const openModal = useBatchVisualStore((state) => state.openModal);
     const updateNodeData = useAppStore((state) => state.updateNodeData);
     const [isMinimized, setIsMinimized] = useState(false);
+
+    useCascadeRun(id);
 
     const runFilter = useBatchDataStore((state: any) => state.runFilter);
     const nodeStoreData = useBatchDataStore((state: any) => state.getNodeData(id));
@@ -50,7 +53,7 @@ const FilterNode: React.FC<NodeProps<FilterNodeData>> = ({ id, data, selected })
     };
 
     return (
-        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-yellow-500' : 'border-slate-200'} ${isMinimized ? 'w-[160px]' : 'w-[260px]'}`}>
+        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-yellow-500' : 'border-slate-200'} ${isMinimized ? 'w-fit min-w-[160px]' : 'w-[260px]'}`}>
             {/* Header - Editable Title */}
             <div className="bg-yellow-500 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-white flex-1">

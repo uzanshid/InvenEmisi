@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { NodeType } from '../types';
-import { Database, FileDigit, Settings, Layers, ArrowRightLeft, FileSpreadsheet, Filter, Calculator, Download, Columns, ChevronDown, ChevronRight } from 'lucide-react';
+import { Database, FileDigit, Settings, Layers, ArrowRightLeft, FileSpreadsheet, Filter, Calculator, Download, Columns, ChevronDown, ChevronRight, GitMerge } from 'lucide-react';
 
 interface CollapsibleSectionProps {
     title: string;
@@ -145,6 +145,17 @@ export const Sidebar = () => {
                         <Columns size={20} />
                     </div>
                     <span className="text-sm font-medium text-slate-700">Transform</span>
+                </div>
+
+                <div
+                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-purple-500 hover:shadow-md transition-all select-none"
+                    onDragStart={(event) => onDragStart(event, 'join')}
+                    draggable
+                >
+                    <div className="p-2 bg-purple-100 rounded-md text-purple-600">
+                        <GitMerge size={20} />
+                    </div>
+                    <span className="text-sm font-medium text-slate-700">Join</span>
                 </div>
             </CollapsibleSection>
 
