@@ -22,9 +22,11 @@ import FilterNode from './nodes/FilterNode';
 import TableMathNode from './nodes/TableMathNode';
 import ExportNode from './nodes/ExportNode';
 import TransformNode from './nodes/TransformNode';
-import JoinNode from './nodes/JoinNode';
+import GhostNode from './nodes/GhostNode';
 import { ContextMenu } from './ContextMenu';
 import { GlobalDataModal } from './GlobalDataModal';
+import { Toolbar } from './Toolbar';
+import { downloadProjectFile } from '../lib/projectSerializer';
 
 interface ContextMenuState {
     x: number;
@@ -61,14 +63,14 @@ const CanvasMain = () => {
         source: SourceNode,
         factor: FactorNode,
         process: ProcessNode,
-        group: GroupNode,
+        groupBox: GroupNode,
         passthrough: PassThroughNode,
         dataset: DatasetNode,
         filter: FilterNode,
         tableMath: TableMathNode,
         export: ExportNode,
         transform: TransformNode,
-        join: JoinNode,
+        ghost: GhostNode,
     }), []);
 
     // Keyboard shortcuts
@@ -108,6 +110,10 @@ const CanvasMain = () => {
                     const pos = screenToFlowPosition({ x: rect.width / 2, y: rect.height / 2 });
                     pasteNodes(pos);
                 }
+            }
+            if (event.ctrlKey && event.key === 's') {
+                event.preventDefault();
+                downloadProjectFile();
             }
         };
 
@@ -213,64 +219,72 @@ const CanvasMain = () => {
     }, [contextMenu, setNodeZIndex]);
 
     return (
-        <div className="flex-1 h-full w-full bg-slate-50" ref={reactFlowWrapper}>
-            <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                nodeTypes={nodeTypes}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                onDrop={onDrop}
-                onDragOver={onDragOver}
-                onNodeContextMenu={onNodeContextMenu}
-                onEdgeContextMenu={onEdgeContextMenu}
-                onPaneContextMenu={onPaneContextMenu}
-                onPaneClick={closeContextMenu}
-                deleteKeyCode={null}
-                selectionMode={SelectionMode.Partial}
-                selectionOnDrag
-                panOnScroll
-                zoomOnScroll={false}
-                zoomActivationKeyCode="Control"
-                fitView
-            >
-                <Background color="#94a3b8" gap={16} size={1} />
-                <Controls className="!bg-white !border-slate-200 !shadow-sm [&>button]:!border-slate-100 [&>button]:!text-slate-600 hover:[&>button]:!bg-slate-50" />
-                <MiniMap
-                    className="!bg-white !border-slate-200 !shadow-sm !rounded-lg overflow-hidden"
-                    maskColor="rgba(241, 245, 249, 0.7)"
-                    nodeColor={(node) => {
-                        switch (node.type) {
-                            case 'source': return '#3b82f6';
-                            case 'factor': return '#10b981';
-                            case 'process': return '#8b5cf6';
-                            case 'group': return '#6366f1';
-                            case 'passthrough': return '#a855f7';
-                            case 'dataset': return '#f97316';
-                            case 'filter': return '#eab308';
-                            case 'tableMath': return '#581c87';
-                            case 'join': return '#a855f7';
-                            default: return '#cbd5e1';
-                        }
-                    }}
-                />
-            </ReactFlow>
+        <div className="flex-1 h-full w-full bg-slate-50 flex flex-col" ref={reactFlowWrapper}>
+            <Toolbar />
+            <div className="flex-1 relative">
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    nodeTypes={nodeTypes}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    onDrop={onDrop}
+                    onDragOver={onDragOver}
+                    onNodeContextMenu={onNodeContextMenu}
+                    onEdgeContextMenu={onEdgeContextMenu}
+                    onPaneContextMenu={onPaneContextMenu}
+                    onPaneClick={closeContextMenu}
+                    deleteKeyCode={null}
+                    selectionMode={SelectionMode.Partial}
+                    selectionOnDrag
+                    panOnScroll
+                    zoomOnScroll={false}
+                    zoomActivationKeyCode="Control"
+                    multiSelectionKeyCode="Shift"
+                    minZoom={0.05}
+                    fitView
+                >
+                    <Background color="#94a3b8" gap={16} size={1} />
+                    <Controls className="!bg-white !border-slate-200 !shadow-sm [&>button]:!border-slate-100 [&>button]:!text-slate-600 hover:[&>button]:!bg-slate-50" />
+                    <MiniMap
+                        className="!bg-white !border-slate-200 !shadow-sm !rounded-lg overflow-hidden"
+                        maskColor="rgba(241, 245, 249, 0.7)"
+                        pannable
+                        zoomable
+                        nodeColor={(node) => {
+                            switch (node.type) {
+                                case 'source': return '#3b82f6';
+                                case 'factor': return '#10b981';
+                                case 'process': return '#8b5cf6';
+                                case 'groupBox': return '#6366f1';
+                                case 'passthrough': return '#a855f7';
+                                case 'dataset': return '#f97316';
+                                case 'filter': return '#eab308';
+                                case 'tableMath': return '#581c87';
+                                case 'transform': return '#0891b2';
+                                case 'ghost': return '#64748b';
+                                default: return '#cbd5e1';
+                            }
+                        }}
+                    />
+                </ReactFlow>
 
-            {contextMenu && (
-                <ContextMenu
-                    x={contextMenu.x}
-                    y={contextMenu.y}
-                    type={contextMenu.type}
-                    onClose={closeContextMenu}
-                    onDelete={handleDelete}
-                    onCopy={handleCopy}
-                    onCreateNode={handleCreateNode}
-                    onSendToBack={contextMenu.type === 'node' ? handleSendToBack : undefined}
-                    onBringToFront={contextMenu.type === 'node' ? handleBringToFront : undefined}
-                />
-            )}
-            <GlobalDataModal />
+                {contextMenu && (
+                    <ContextMenu
+                        x={contextMenu.x}
+                        y={contextMenu.y}
+                        type={contextMenu.type}
+                        onClose={closeContextMenu}
+                        onDelete={handleDelete}
+                        onCopy={handleCopy}
+                        onCreateNode={handleCreateNode}
+                        onSendToBack={contextMenu.type === 'node' ? handleSendToBack : undefined}
+                        onBringToFront={contextMenu.type === 'node' ? handleBringToFront : undefined}
+                    />
+                )}
+                <GlobalDataModal />
+            </div>
         </div>
     );
 };

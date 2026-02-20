@@ -6,6 +6,8 @@ import type { FactorNodeData } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import LookupDialog from '../LookupDialog';
 import type { EmissionFactor } from '../../data/emissionFactorDb';
+import NoteIndicator from './NoteIndicator';
+import NoteEditor from './NoteEditor';
 
 // Format number
 const formatNumber = (num: number): string => {
@@ -28,7 +30,8 @@ const FactorNode: React.FC<NodeProps<FactorNodeData>> = ({ id, data, selected })
     const [isFocused, setIsFocused] = useState(false);
     const [isLookupOpen, setIsLookupOpen] = useState(false);
     const [formulaExpr, setFormulaExpr] = useState<string | null>(null);
-    const [isMinimized, setIsMinimized] = useState(false);
+    const isMinimized = !!data.isMinimized;
+    const [noteOpen, setNoteOpen] = useState(false);
 
     const mode = data.mode || 'MANUAL_OVERRIDE';
     const isDbMode = mode === 'LOCKED_DB';
@@ -121,17 +124,20 @@ const FactorNode: React.FC<NodeProps<FactorNodeData>> = ({ id, data, selected })
                         type="text"
                         value={data.label}
                         onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="flex-1 bg-transparent text-white font-semibold text-sm text-center outline-none placeholder-white/60"
+                        className="flex-1 bg-transparent text-white font-bold text-base text-center outline-none placeholder-white/60"
                         placeholder="Factor Name"
                         readOnly={isDbMode}
                     />
-                    <button
-                        onClick={() => setIsMinimized(!isMinimized)}
-                        className="text-white/80 hover:text-white transition-colors ml-2"
-                        title={isMinimized ? "Expand" : "Minimize"}
-                    >
-                        {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
-                    </button>
+                    <div className="flex items-center gap-1.5 ml-2">
+                        <NoteIndicator note={data.note} onClick={() => setNoteOpen(!noteOpen)} />
+                        <button
+                            onClick={() => updateNodeData(id, { isMinimized: !isMinimized })}
+                            className="text-white/80 hover:text-white transition-colors"
+                            title={isMinimized ? "Expand" : "Minimize"}
+                        >
+                            {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Minimized Summary */}
@@ -238,6 +244,17 @@ const FactorNode: React.FC<NodeProps<FactorNodeData>> = ({ id, data, selected })
                             )}
                             <span className="text-xs text-slate-500 ml-auto">{data.outputs[0]?.label || 'Output'}</span>
                         </div>
+
+                        {/* Note Editor */}
+                        {noteOpen && (
+                            <NoteEditor
+                                note={data.note}
+                                onChange={(note) => updateNodeData(id, { note })}
+                                isOpen={noteOpen}
+                                onToggle={() => setNoteOpen(false)}
+                                accentColor="emerald"
+                            />
+                        )}
                     </div>
                 )}
 

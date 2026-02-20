@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { NodeType } from '../types';
-import { Database, FileDigit, Settings, Layers, ArrowRightLeft, FileSpreadsheet, Filter, Calculator, Download, Columns, ChevronDown, ChevronRight, GitMerge } from 'lucide-react';
+import { Database, FileDigit, Settings, Layers, ArrowRightLeft, FileSpreadsheet, Filter, Calculator, Download, Columns, ChevronDown, ChevronRight, Ghost } from 'lucide-react';
 
 interface CollapsibleSectionProps {
     title: string;
@@ -81,7 +81,7 @@ export const Sidebar = () => {
             <CollapsibleSection title="Organization" defaultOpen={false}>
                 <div
                     className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-indigo-500 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'group')}
+                    onDragStart={(event) => onDragStart(event, 'groupBox')}
                     draggable
                 >
                     <div className="p-2 bg-indigo-100 rounded-md text-indigo-600">
@@ -148,14 +148,14 @@ export const Sidebar = () => {
                 </div>
 
                 <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-purple-500 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'join')}
+                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-slate-500 hover:shadow-md transition-all select-none"
+                    onDragStart={(event) => onDragStart(event, 'ghost')}
                     draggable
                 >
-                    <div className="p-2 bg-purple-100 rounded-md text-purple-600">
-                        <GitMerge size={20} />
+                    <div className="p-2 bg-slate-100 rounded-md text-slate-500">
+                        <Ghost size={20} />
                     </div>
-                    <span className="text-sm font-medium text-slate-700">Join</span>
+                    <span className="text-sm font-medium text-slate-700">Ghost</span>
                 </div>
             </CollapsibleSection>
 

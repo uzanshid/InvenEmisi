@@ -36,10 +36,10 @@ const createNodeData = (type: NodeType): NodeData => {
                 inputs: [{ id: generateId(), label: 'A' }],
                 outputs: [{ id: generateId(), label: 'Result' }],
             } as ProcessNodeData;
-        case 'group':
+        case 'groupBox':
             return {
                 label: baseLabel,
-                type: 'group',
+                type: 'groupBox',
                 color: '#6366f1',
                 zIndex: -1,
             } as GroupNodeData & { zIndex?: number };
@@ -84,19 +84,17 @@ const createNodeData = (type: NodeType): NodeData => {
                 label: 'Transform',
                 type: 'transform',
                 operations: [],
-                inputs: [{ id: generateId(), label: 'In' }],
+                inputs: [
+                    { id: generateId(), label: 'Input 1' },
+                    { id: generateId(), label: 'Input 2' }
+                ],
                 outputs: [{ id: generateId(), label: 'Out' }],
             } as any;
-        case 'join':
+        case 'ghost':
             return {
-                label: 'Join',
-                type: 'join',
-                joinType: 'left',
-                inputs: [
-                    { id: generateId(), label: 'Main' },
-                    { id: generateId(), label: 'Lookup' }
-                ],
-                outputs: [{ id: generateId(), label: 'Joined' }],
+                label: 'Ghost',
+                type: 'ghost',
+                outputs: [{ id: generateId(), label: 'Output' }],
             } as any;
         default:
             throw new Error(`Unknown node type: ${type}`);
@@ -213,7 +211,7 @@ export const useAppStore = create<AppState>()(
                         if (node.id !== nodeId) return node;
 
                         // Support both process and tableMath nodes
-                        if (node.data.type !== 'process' && node.data.type !== 'tableMath') return node;
+                        if (node.data.type !== 'process' && node.data.type !== 'tableMath' && node.data.type !== 'transform') return node;
 
                         const currentInputs = 'inputs' in node.data ? node.data.inputs : [];
                         const newInput: HandleData = {
@@ -282,7 +280,7 @@ export const useAppStore = create<AppState>()(
                     const sourceNode = state.nodes.find(n => n.id === connection.source);
 
                     // Check if target node is process or tableMath and needs auto-input
-                    if (targetNode && (targetNode.data.type === 'process' || targetNode.data.type === 'tableMath')) {
+                    if (targetNode && (targetNode.data.type === 'process' || targetNode.data.type === 'tableMath' || targetNode.data.type === 'transform')) {
                         const inputs = 'inputs' in targetNode.data ? targetNode.data.inputs : [];
 
                         // If targetHandle is undefined or doesn't exist in inputs, auto-add new input

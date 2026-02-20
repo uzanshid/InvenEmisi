@@ -322,6 +322,44 @@ export const FormulaHelpDialog: React.FC<FormulaHelpDialogProps> = ({ isOpen, on
                         {activeTab === 'units' && (
                             <div className="space-y-6">
                                 <div>
+                                    <h3 className="text-md font-bold text-slate-800 mb-3">Compound Units</h3>
+                                    <p className="text-sm text-slate-600 mb-4">
+                                        Use a <strong>dot (.)</strong> to join compound units. This keeps them as a single unit instead of being split.
+                                    </p>
+                                    <div className="space-y-2">
+                                        <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                            <h4 className="text-xs font-bold text-green-700 mb-2">✅ Correct (dot separator)</h4>
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <code className="bg-white px-2 py-1 rounded border">kg.CO2/kWh</code>
+                                                    <span className="text-slate-500">→ 2 units:</span>
+                                                    <span className="text-green-700 font-mono">kg.CO2 / kWh</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <code className="bg-white px-2 py-1 rounded border">kg.NOx/kg</code>
+                                                    <span className="text-slate-500">→ 2 units:</span>
+                                                    <span className="text-green-700 font-mono">kg.NOx / kg</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <code className="bg-white px-2 py-1 rounded border">ton.CH4/year</code>
+                                                    <span className="text-slate-500">→ 2 units:</span>
+                                                    <span className="text-green-700 font-mono">ton.CH4 / year</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+                                            <h4 className="text-xs font-bold text-red-700 mb-2">❌ Avoid (space separator)</h4>
+                                            <div className="flex items-center justify-between text-xs">
+                                                <code className="bg-white px-2 py-1 rounded border">kg CO2/kWh</code>
+                                                <span className="text-slate-500">→ 3 units:</span>
+                                                <span className="text-red-700 font-mono">kg · CO2 / kWh</span>
+                                            </div>
+                                            <p className="text-[10px] text-red-600 mt-1">Space splits "kg" and "CO2" into separate units — they can cancel independently!</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
                                     <h3 className="text-md font-bold text-slate-800 mb-3">Automatic Unit Derivation</h3>
                                     <p className="text-sm text-slate-600 mb-4">
                                         The engine automatically calculates result units based on the formula

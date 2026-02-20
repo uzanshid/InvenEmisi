@@ -53,7 +53,7 @@ function triggerDownstream(
         const nodeType = targetNode.data?.type || targetNode.type;
 
         // Only cascade to batch-processing nodes
-        if (nodeType === 'tableMath' || nodeType === 'filter' || nodeType === 'transform' || nodeType === 'join') {
+        if (nodeType === 'tableMath' || nodeType === 'filter' || nodeType === 'transform') {
             runNodeByType(targetNode, edges, allNodes);
         }
     }
@@ -63,7 +63,7 @@ function triggerDownstream(
  * Programmatically run a batch node based on its type.
  */
 function runNodeByType(node: any, edges: any[], allNodes: any[]) {
-    const { runMath, runFilter, runTransform, executeJoinNode } = useBatchDataStore.getState();
+    const { runMath, runFilter, runTransform } = useBatchDataStore.getState();
     const data = node.data;
 
     // Find source node for this target
@@ -119,7 +119,5 @@ function runNodeByType(node: any, edges: any[], allNodes: any[]) {
         if (data.operations && data.operations.length > 0) {
             runTransform(node.id, sourceNodeId, data.operations);
         }
-    } else if (nodeType === 'join') {
-        executeJoinNode(node.id);
     }
 }

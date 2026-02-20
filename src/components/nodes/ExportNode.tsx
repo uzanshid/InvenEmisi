@@ -8,12 +8,15 @@ import { useBatchDataStore } from '../../store/useBatchDataStore';
 import type { ColumnMetadata } from '../../store/useBatchDataStore';
 import { useAppStore } from '../../store/useAppStore';
 import { utils, writeFile } from 'xlsx';
+import NoteIndicator from './NoteIndicator';
+import NoteEditor from './NoteEditor';
 
 const ExportNode: React.FC<NodeProps<ExportNodeData>> = ({ id, data, selected }) => {
     const openModal = useBatchVisualStore((state) => state.openModal);
     const updateNodeData = useAppStore((state) => state.updateNodeData);
-    const [isMinimized, setIsMinimized] = useState(false);
+    const isMinimized = !!data.isMinimized;
     const [exportStatus, setExportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [noteOpen, setNoteOpen] = useState(false);
 
     // Get connected source node
     const edges = useReactFlow().getEdges();
@@ -71,13 +74,14 @@ const ExportNode: React.FC<NodeProps<ExportNodeData>> = ({ id, data, selected })
                         type="text"
                         value={data.label}
                         onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="bg-transparent text-sm font-semibold outline-none placeholder-emerald-200 w-full"
+                        className="bg-transparent text-base font-bold outline-none placeholder-emerald-200 w-full"
                         placeholder="Export"
                     />
                 </div>
                 <div className="flex items-center gap-1.5">
                     <div className={`w-2 h-2 rounded-full ${getStatusColor()} shadow-[0_0_8px_rgba(255,255,255,0.5)]`} />
-                    <button onClick={() => setIsMinimized(!isMinimized)} className="text-white/80 hover:text-white transition-colors" title={isMinimized ? "Expand" : "Minimize"}>
+                    <NoteIndicator note={data.note} onClick={() => setNoteOpen(!noteOpen)} />
+                    <button onClick={() => updateNodeData(id, { isMinimized: !isMinimized })} className="text-white/80 hover:text-white transition-colors" title={isMinimized ? "Expand" : "Minimize"}>
                         {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
                     </button>
                     <button onClick={() => openModal(sourceNodeId || id)} className="text-white/80 hover:text-white transition-colors" title="View Data">
@@ -178,6 +182,17 @@ const ExportNode: React.FC<NodeProps<ExportNodeData>> = ({ id, data, selected })
                                 )}
                             </button>
                         </>
+                    )}
+
+                    {/* Note Editor */}
+                    {noteOpen && (
+                        <NoteEditor
+                            note={data.note}
+                            onChange={(note) => updateNodeData(id, { note })}
+                            isOpen={noteOpen}
+                            onToggle={() => setNoteOpen(false)}
+                            accentColor="emerald"
+                        />
                     )}
                 </div>
             )}

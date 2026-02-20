@@ -6,12 +6,15 @@ import type { DatasetNodeData } from '../../types';
 import { useBatchVisualStore } from '../../store/useBatchVisualStore';
 import { useBatchDataStore } from '../../store/useBatchDataStore';
 import { useAppStore } from '../../store/useAppStore';
+import NoteIndicator from './NoteIndicator';
+import NoteEditor from './NoteEditor';
 
 const DatasetNode: React.FC<NodeProps<DatasetNodeData>> = ({ id, data, selected }) => {
     const openModal = useBatchVisualStore((state) => state.openModal);
     const { setNodes } = useReactFlow();
-    const [isMinimized, setIsMinimized] = useState(false);
+    const isMinimized = !!data.isMinimized;
     const [showUnitConfig, setShowUnitConfig] = useState(false);
+    const [noteOpen, setNoteOpen] = useState(false);
     const updateNodeData = useAppStore((state) => state.updateNodeData);
 
     const ingestFile = useBatchDataStore((state) => state.ingestFile);
@@ -46,6 +49,8 @@ const DatasetNode: React.FC<NodeProps<DatasetNodeData>> = ({ id, data, selected 
                     }
                     return n;
                 }));
+                // Auto-show unit config after first upload
+                setShowUnitConfig(true);
             } catch (error) {
                 console.error("Ingestion failed", error);
             }
@@ -66,13 +71,14 @@ const DatasetNode: React.FC<NodeProps<DatasetNodeData>> = ({ id, data, selected 
                         type="text"
                         value={data.label}
                         onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="bg-transparent text-sm font-semibold outline-none placeholder-orange-200 w-full"
+                        className="bg-transparent text-base font-bold outline-none placeholder-orange-200 w-full"
                         placeholder="Dataset"
                     />
                 </div>
                 <div className="flex items-center gap-1.5">
                     <div className={`w-2 h-2 rounded-full ${getStatusColor()} shadow-[0_0_8px_rgba(255,255,255,0.5)]`} />
-                    <button onClick={() => setIsMinimized(!isMinimized)} className="text-white/80 hover:text-white transition-colors" title={isMinimized ? "Expand" : "Minimize"}>
+                    <NoteIndicator note={data.note} onClick={() => setNoteOpen(!noteOpen)} />
+                    <button onClick={() => updateNodeData(id, { isMinimized: !isMinimized })} className="text-white/80 hover:text-white transition-colors" title={isMinimized ? "Expand" : "Minimize"}>
                         {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
                     </button>
                     <button onClick={() => openModal(id)} className="text-white/80 hover:text-white transition-colors" title="View Data">
@@ -133,8 +139,9 @@ const DatasetNode: React.FC<NodeProps<DatasetNodeData>> = ({ id, data, selected 
                                 <div className="p-2 bg-orange-50 rounded border border-orange-100 space-y-1.5 max-h-48 overflow-y-auto" onWheel={(e) => e.stopPropagation()}>
                                     <p className="text-[10px] font-bold text-orange-600 uppercase flex justify-between items-center">
                                         <span>Column Units</span>
-                                        <span className="text-[9px] font-normal text-orange-400 italic">blank = unitless</span>
+                                        <span className="text-[9px] font-normal text-orange-400 italic">optional</span>
                                     </p>
+                                    <p className="text-[9px] text-slate-400 italic mb-1">Use dot for compounds: kg.CO2, ton.CH4</p>
                                     {nodeData.schema.map(col => (
                                         <div key={col.id} className="flex items-center gap-2">
                                             <span className={`text-[9px] px-1 py-0.5 rounded font-bold ${col.type === 'number' ? 'bg-blue-100 text-blue-500' : 'bg-slate-100 text-slate-400'}`}>
@@ -158,6 +165,17 @@ const DatasetNode: React.FC<NodeProps<DatasetNodeData>> = ({ id, data, selected 
                                 </div>
                             )}
                         </div>
+                    )}
+
+                    {/* Note Editor */}
+                    {noteOpen && (
+                        <NoteEditor
+                            note={data.note}
+                            onChange={(note) => updateNodeData(id, { note })}
+                            isOpen={noteOpen}
+                            onToggle={() => setNoteOpen(false)}
+                            accentColor="orange"
+                        />
                     )}
                 </div>
             )}

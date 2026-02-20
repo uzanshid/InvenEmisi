@@ -4,6 +4,8 @@ import type { NodeProps } from 'reactflow';
 import { AlertCircle, Minimize2, Maximize2 } from 'lucide-react';
 import type { SourceNodeData } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
+import NoteIndicator from './NoteIndicator';
+import NoteEditor from './NoteEditor';
 
 // Format number with thousand separators, preserve all decimals
 const formatNumber = (num: number): string => {
@@ -26,7 +28,8 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
     const updateNodeData = useAppStore((state) => state.updateNodeData);
     const [inputValue, setInputValue] = useState(String(data.value || ''));
     const [isFocused, setIsFocused] = useState(false);
-    const [isMinimized, setIsMinimized] = useState(false);
+    const isMinimized = !!data.isMinimized;
+    const [noteOpen, setNoteOpen] = useState(false);
     const [formulaExpr, setFormulaExpr] = useState<string | null>(null); // stores "=1/365" etc.
 
     const hasValue = data.value !== undefined && data.value !== null && data.value !== 0;
@@ -102,16 +105,19 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
                     type="text"
                     value={data.label}
                     onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                    className="flex-1 bg-transparent text-white font-semibold text-sm text-center outline-none placeholder-blue-200"
+                    className="flex-1 bg-transparent text-white font-bold text-base text-center outline-none placeholder-blue-200"
                     placeholder="Node Name"
                 />
-                <button
-                    onClick={() => setIsMinimized(!isMinimized)}
-                    className="text-white/80 hover:text-white transition-colors ml-2"
-                    title={isMinimized ? "Expand" : "Minimize"}
-                >
-                    {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
-                </button>
+                <div className="flex items-center gap-1.5 ml-2">
+                    <NoteIndicator note={data.note} onClick={() => setNoteOpen(!noteOpen)} />
+                    <button
+                        onClick={() => updateNodeData(id, { isMinimized: !isMinimized })}
+                        className="text-white/80 hover:text-white transition-colors"
+                        title={isMinimized ? "Expand" : "Minimize"}
+                    >
+                        {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
+                    </button>
+                </div>
             </div>
 
             {/* Minimized Summary */}
@@ -180,6 +186,17 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
                             </span>
                             <span className="text-xs text-slate-500">{data.outputs[0]?.label || 'Output'}</span>
                         </div>
+                    )}
+
+                    {/* Note Editor */}
+                    {noteOpen && (
+                        <NoteEditor
+                            note={data.note}
+                            onChange={(note) => updateNodeData(id, { note })}
+                            isOpen={noteOpen}
+                            onToggle={() => setNoteOpen(false)}
+                            accentColor="blue"
+                        />
                     )}
                 </div>
             )}

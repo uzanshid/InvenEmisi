@@ -1,39 +1,41 @@
-# InvenEmisi v0.4
+# InvenEmisi v0.5 (Beta)
 
 **Sistem Inventarisasi Emisi Berbasis Node (Visual Calculation Engine)**
+
+> **Status: Beta Testing**  
+> Saat ini InvenEmisi memasuki tahap Beta. Kami mengundang para ahli lingkungan, dosen, peneliti, dan praktisi untuk mencoba dan memberikan masukan (feedback) guna penyempurnaan lebih lanjut sebelum rilis stabil.
 
 InvenEmisi adalah aplikasi web modern untuk membantu praktisi lingkungan, insinyur, dan peneliti dalam melakukan perhitungan inventarisasi emisi yang kompleks. Menggunakan pendekatan **Node-Based Editor** (mirip Blender/Unreal Engine), pengguna dapat membangun alur perhitungan emisi secara visual, transparan, dan terstruktur.
 
 ![Screenshot Workbench](https://via.placeholder.com/800x450?text=Workbench+Preview)
 
-## 🌟 Fitur Utama (v0.4)
+## 🌟 Fitur Utama (v0.5)
 
 1.  **Infinite Canvas Workflow**:
     *   Susun diagram perhitungan di canvas tanpa batas luas.
-    *   Drag-and-drop node dari sidebar.
-    *   Koneksikan antar node untuk mengalirkan data.
+    *   **Extended Zoom**: Zoom-out hingga 5% untuk melihat keseluruhan project yang besar.
+    *   **Interactive MiniMap**: Navigasi cepat dengan klik & drag pada minimap.
+    *   **Multi-Select**: Dukungan Shift+Click dan drag selection.
 
 2.  **Tipe Node Cerdas**:
     *   **Source Node**: Input data aktivitas (misal: konsumsi bahan bakar dalam `Liter`, `Ton`, `kWh`).
-    *   **Factor Node**: Input faktor emisi. Terintegrasi dengan database **EMEP/EEA** (12.500+ data) dengan fitur pencarian dan filter multi-kolom.
-    *   **Process Node**: Mesin hitung fleksibel. Dukung rumus kustom (misal: `[Activity] * [Factor]`), eksponen unit otomatis, dan insert variable dengan bracket `[]`.
-    *   **TableMath Node**: Perhitungan batch data tabular. Mendukung rumus kompleks, fungsi agregat (`$SUM`, `$AVG`), dan kondisional (`if(A>B, 1, 0)`).
-    *   **Join Node** (New in v0.4): Menggabungkan dua dataset berdasarkan key column (mirip SQL JOIN / Excel VLOOKUP).
-    *   **Filter & Transform Node**: Manipulasi data (filter row, rename column, delete column) sebelum diproses lebih lanjut.
-    *   **Group Node**: Wadah visual untuk mengelompokkan dan merapikan node-node terkait.
+    *   **Factor Node**: Input faktor emisi. Terintegrasi dengan database **EMEP/EEA** (12.500+ data).
+    *   **Process Node**: Mesin hitung fleksibel. Dukung rumus kustom, eksponen unit otomatis, dan **centered handle alignment** saat minimized.
+    *   **TableMath Node**: Perhitungan batch data tabular dengan fungsi agregat (`$SUM`, `$AVG`).
+    *   **Ghost Node**: Node bayangan untuk mereferensikan nilai dari node lain tanpa garis ruwet (sekarang dengan auto-labeling).
+    *   **Group Node**: Pengelompokan visual yang lebih rapi tanpa outline yang mengganggu.
+    *   **Join, Filter, Transform**: Manipulasi data lengkap (SQL-like JOIN, filtering, transforming).
 
-3.  **Cascade Auto-Run (New in v0.4)**:
-    *   Otomatis menjalankan kalkulasi berantai. Saat satu data di-update, seluruh node downstream (Filter, Transform, Join) akan menghitung ulang secara otomatis.
-    *   Tidak perlu klik "Run" satu per satu untuk setiap node dalam pipeline.
+3.  **Visual & UX Enhancements (v0.5)**:
+    *   **Prominent Titles**: Judul node lebih besar dan tebal untuk keterbacaan lebih baik.
+    *   **Smart Handles**: Titik koneksi otomatis menumpuk di tengah saat node di-minimize agar tetap rapi.
+    *   **Clean UI**: Penghapusan garis outline default yang mengganggu pada Group Node.
 
-4.  **UI/UX Improvements**:
-    *   **Dynamic Node Width**: Lebar node otomatis menyesuaikan panjang judul saat di-minimize.
-    *   **Minimize/Maximize**: Semua node dapat di-minimize untuk menghemat ruang canvas.
-    *   **Persistent Handles**: Edge tetap tersambung rapi meskipun node di-minimize.
+4.  **Cascade Auto-Run**:
+    *   Otomatis menjalankan kalkulasi berantai saat data hulu berubah.
 
 5.  **Automatic Unit Conversion**:
-    *   Sistem secara otomatis mendeteksi dan menghitung satuan.
-    *   Mendukung validasi ketat dan konversi otomatis (contoh: `kg` ke `ton`).
+    *   Sistem secara otomatis mendeteksi dan menghitung satuan (misal: `kg` vs `ton`).
 
 ## 🚀 Alur Penggunaan (Workflow)
 
@@ -76,19 +78,17 @@ Project ini dibangun dengan **React**, **TypeScript**, **Vite**, dan **React Flo
 
 ## 🤝 Kontribusi (Roadmap)
 
-Versi saat ini (v0.4) mencakup:
+## 🤝 Kontribusi (Roadmap)
+
+Versi saat ini (v0.5 Beta) mencakup:
 *   [x] Multi-column database filtering
 *   [x] Join Node (VLOOKUP mechanism)
 *   [x] Aggregate Functions ($SUM, $AVG, $MIN, $MAX)
 *   [x] Cascade Auto-Run System
-*   [x] Dynamic Node Resizing
-*   [x] Enhanced Formula Engine with Conditional Logic
-
-Fokus pengembangan selanjutnya:
-*   [ ] Export/Import project (JSON file).
-*   [ ] Reporting module (Generasi PDF/Excel).
-*   [ ] Lebih banyak database faktor emisi.
-*   [ ] Analisis ketidakpastian (Uncertainty Analysis).
+*   [x] **UX Overhaul** (Zoom, MiniMap, Multi-select, Grouping)
+*   [ ] Export/Import project (Next Priority)
+*   [ ] Reporting module (Generasi PDF/Excel)
+*   [ ] Analisis ketidakpastian (Uncertainty Analysis)
 
 ---
 **Developed by Fauzan Shidiq**

@@ -1,6 +1,6 @@
 import type { Node, Edge, XYPosition, Connection, OnNodesChange, OnEdgesChange } from 'reactflow';
 
-export type NodeType = 'source' | 'process' | 'factor' | 'group' | 'passthrough' | 'dataset' | 'filter' | 'tableMath' | 'export' | 'transform' | 'join';
+export type NodeType = 'source' | 'process' | 'factor' | 'groupBox' | 'passthrough' | 'dataset' | 'filter' | 'tableMath' | 'export' | 'transform' | 'ghost';
 
 export interface HandleData {
     id: string;
@@ -10,6 +10,10 @@ export interface HandleData {
 // Base node data
 export interface BaseNodeData {
     label: string;
+    // Phase 10: Workspace Notes
+    note?: string;
+    // Visual state (persisted)
+    isMinimized?: boolean;
     // Calculation results
     calculatedValue?: string | number | null;
     error?: string;
@@ -45,11 +49,18 @@ export interface ProcessNodeData extends BaseNodeData {
     resultUnit?: string;  // Calculated unit from formula
     inputs: HandleData[];
     outputs: HandleData[];
+    // Batch formula result (when connected to dataset nodes)
+    batchResult?: {
+        value: number | string;
+        unit?: string;
+        status: 'SUCCESS' | 'ERROR';
+        error?: string;
+    };
 }
 
 // Group Node: Container for organizing nodes
 export interface GroupNodeData {
-    type: 'group';
+    type: 'groupBox';
     label: string;
     color?: string;
 }
@@ -99,31 +110,32 @@ export interface ExportNodeData extends BaseNodeData {
     inputs: HandleData[];
 }
 
-// Transform Node: Column operations (delete, rename, select)
+// Transform Node: Column operations (delete, rename, select, combine)
 export interface TransformNodeData extends BaseNodeData {
     type: 'transform';
     operations?: {
-        type: 'delete' | 'rename' | 'select';
+        type: 'delete' | 'rename' | 'select' | 'combine';
         column?: string;
         newName?: string;
         selectedColumns?: string[];
+        // For combine operations
+        combineInputs?: {
+            sourceInputIndex: number;
+            columns: string[];
+        }[];
     }[];
     inputs: HandleData[];
     outputs: HandleData[];
 }
 
-// Join Node: Merge two dataframes (Phase 9)
-export interface JoinNodeData extends BaseNodeData {
-    type: 'join';
-    leftKey?: string;           // Key column from main data
-    rightKey?: string;          // Key column from lookup data
-    targetColumns?: string[];   // Columns to pull from lookup data
-    joinType?: 'left';          // Currently only LEFT JOIN supported
-    inputs: HandleData[];       // [0] = main data, [1] = lookup data
+// Ghost Node: Visual duplicate of another node (Phase 9 replacement for Join)
+export interface GhostNodeData extends BaseNodeData {
+    type: 'ghost';
+    sourceNodeId?: string;   // ID of the original node being mirrored
     outputs: HandleData[];
 }
 
-export type NodeData = SourceNodeData | FactorNodeData | ProcessNodeData | GroupNodeData | PassThroughNodeData | DatasetNodeData | FilterNodeData | TableMathNodeData | ExportNodeData | TransformNodeData | JoinNodeData;
+export type NodeData = SourceNodeData | FactorNodeData | ProcessNodeData | GroupNodeData | PassThroughNodeData | DatasetNodeData | FilterNodeData | TableMathNodeData | ExportNodeData | TransformNodeData | GhostNodeData;
 
 export interface AppState {
     nodes: Node<NodeData>[];

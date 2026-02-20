@@ -297,26 +297,8 @@ export const executeBatchFormula = (
         const cleanScope: any = {};
         let cleanFormula = formula;
 
-        // Add column values to scope
-        existingSchema.forEach(colName => {
-            const val = Number(row[colName]);
-            const safeVarName = columnMapping[colName];
-            cleanScope[safeVarName] = isNaN(val) ? row[colName] : val;
-
-            const escapedColName = colName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            cleanFormula = cleanFormula.replace(new RegExp(`\\[${escapedColName}\\]`, 'g'), safeVarName);
-        });
-
-        // Add scalar values to scope
-        Object.entries(scalarInputs).forEach(([name, input]) => {
-            const safeVarName = scalarMapping[name];
-            cleanScope[safeVarName] = input.value;
-
-            const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            cleanFormula = cleanFormula.replace(new RegExp(`\\[${escapedName}\\]`, 'g'), safeVarName);
-        });
-
-        // Phase 9: Inject aggregate values into scope
+        // STEP 1: Replace aggregate syntax FIRST (before column replacement)
+        // This prevents [column] inside $AVG_[column] from being corrupted
         if (aggregates.length > 0) {
             for (const agg of aggregates) {
                 const safeAggregateName = sanitizeVarName(agg.originalSyntax);
@@ -327,6 +309,25 @@ export const executeBatchFormula = (
                 cleanFormula = cleanFormula.replace(new RegExp(escapedSyntax, 'g'), safeAggregateName);
             }
         }
+
+        // STEP 2: Add column values to scope (after aggregates are already replaced)
+        existingSchema.forEach(colName => {
+            const val = Number(row[colName]);
+            const safeVarName = columnMapping[colName];
+            cleanScope[safeVarName] = isNaN(val) ? row[colName] : val;
+
+            const escapedColName = colName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            cleanFormula = cleanFormula.replace(new RegExp(`\\[${escapedColName}\\]`, 'g'), safeVarName);
+        });
+
+        // STEP 3: Add scalar values to scope
+        Object.entries(scalarInputs).forEach(([name, input]) => {
+            const safeVarName = scalarMapping[name];
+            cleanScope[safeVarName] = input.value;
+
+            const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            cleanFormula = cleanFormula.replace(new RegExp(`\\[${escapedName}\\]`, 'g'), safeVarName);
+        });
 
         // Inject XLOOKUP column arrays into scope
         if (hasXLOOKUP) {

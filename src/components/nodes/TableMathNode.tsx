@@ -9,6 +9,8 @@ import { useAppStore } from '../../store/useAppStore';
 import { FormulaHelpDialog } from '../FormulaHelpDialog';
 import { FormulaInput } from '../FormulaInput';
 import { useCascadeRun } from '../../hooks/useCascadeRun';
+import NoteIndicator from './NoteIndicator';
+import NoteEditor from './NoteEditor';
 
 // Editable Label Component
 const EditableLabel: React.FC<{ value: string; onSave: (v: string) => void }> = ({ value, onSave }) => {
@@ -51,9 +53,10 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
     const addNodeInput = useAppStore((state) => state.addNodeInput);
     const updateHandleLabel = useAppStore((state) => state.updateHandleLabel);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [isMinimized, setIsMinimized] = useState(false);
+    const isMinimized = !!data.isMinimized;
     const [selectedInputIdx, setSelectedInputIdx] = useState(0);
     const [showHelp, setShowHelp] = useState(false);
+    const [noteOpen, setNoteOpen] = useState(false);
 
     useCascadeRun(id);
 
@@ -229,13 +232,14 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
                         type="text"
                         value={data.label}
                         onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="bg-transparent text-sm font-semibold outline-none placeholder-purple-300 w-full"
+                        className="bg-transparent text-base font-bold outline-none placeholder-purple-300 w-full"
                         placeholder="Table Math"
                     />
                 </div>
                 <div className="flex items-center gap-1.5">
                     <div className={`w-2 h-2 rounded-full ${getStatusColor()} shadow-[0_0_8px_rgba(255,255,255,0.5)]`} />
-                    <button onClick={() => setIsMinimized(!isMinimized)} className="text-white/80 hover:text-white transition-colors" title={isMinimized ? "Expand" : "Minimize"}>
+                    <NoteIndicator note={data.note} onClick={() => setNoteOpen(!noteOpen)} />
+                    <button onClick={() => updateNodeData(id, { isMinimized: !isMinimized })} className="text-white/80 hover:text-white transition-colors" title={isMinimized ? "Expand" : "Minimize"}>
                         {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
                     </button>
                     <button onClick={() => openModal(id)} className="text-white/80 hover:text-white transition-colors" title="View Data">
@@ -421,6 +425,17 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
                         <div className="p-2 bg-red-50 text-red-600 rounded text-[10px] border border-red-100">
                             <span className="font-bold">Error:</span> {nodeStoreData.errorDetails.message}
                         </div>
+                    )}
+
+                    {/* Note Editor */}
+                    {noteOpen && (
+                        <NoteEditor
+                            note={data.note}
+                            onChange={(note) => updateNodeData(id, { note })}
+                            isOpen={noteOpen}
+                            onToggle={() => setNoteOpen(false)}
+                            accentColor="purple"
+                        />
                     )}
                 </div>
             )}

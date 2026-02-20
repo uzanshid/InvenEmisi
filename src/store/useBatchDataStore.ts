@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import Papa from 'papaparse';
-import { executeBatchFormula, executeJoin } from '../lib/batchCalculationEngine';
+import { executeBatchFormula } from '../lib/batchCalculationEngine';
 import { read, utils } from 'xlsx';
+import { useAppStore } from './useAppStore';
 
 export interface ColumnMetadata {
     id: string;
@@ -31,13 +32,39 @@ interface BatchDataStore {
     runFilter: (nodeId: string, sourceNodeId: string, criteria: any) => void;
     setColumnUnit: (nodeId: string, columnId: string, unit: string) => void;
     runTransform: (nodeId: string, sourceNodeId: string, operations: any[]) => void;
-    executeJoinNode: (nodeId: string) => void; // Phase 9
+    runCombineTransform: (nodeId: string, sourceNodeIds: string[], operations: any[]) => void;
 }
 
 export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
     nodes: {},
 
-    getNodeData: (nodeId) => get().nodes[nodeId],
+    getNodeData: (nodeId) => {
+        // First check if this node has direct batch data
+        const directData = get().nodes[nodeId];
+        if (directData) return directData;
+
+        // If no direct data, check if this is a Ghost node and resolve to source
+        const appNodes = useAppStore.getState().nodes;
+        const node = appNodes.find(n => n.id === nodeId);
+        if (node?.data?.type === 'ghost' && node.data.sourceNodeId) {
+            // Follow the Ghost chain (handles Ghost→Ghost→Source)
+            const visited = new Set<string>();
+            let currentId: string | undefined = node.data.sourceNodeId;
+            while (currentId && !visited.has(currentId)) {
+                visited.add(currentId);
+                const data = get().nodes[currentId];
+                if (data) return data;
+                // Check if source is also a Ghost
+                const srcNode = appNodes.find(n => n.id === currentId);
+                if (srcNode?.data?.type === 'ghost' && srcNode.data.sourceNodeId) {
+                    currentId = srcNode.data.sourceNodeId;
+                } else {
+                    break;
+                }
+            }
+        }
+        return undefined;
+    },
 
     ingestFile: async (nodeId, file) => {
         set((state) => ({
@@ -169,7 +196,7 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
     },
 
     runMath: (nodeId, sourceNodeId, formula, newColName, scalarInputs = {}, unitOverride) => {
-        const sourceNode = get().nodes[sourceNodeId];
+        const sourceNode = get().getNodeData(sourceNodeId);
 
         if (!sourceNode || !sourceNode.rawData || sourceNode.rawData.length === 0) {
             console.error("Source node data not found for math:", sourceNodeId);
@@ -245,7 +272,7 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
     },
 
     runFilter: (nodeId, sourceNodeId, criteria) => {
-        const sourceNode = get().nodes[sourceNodeId];
+        const sourceNode = get().getNodeData(sourceNodeId);
 
         if (!sourceNode || !sourceNode.rawData || sourceNode.rawData.length === 0) {
             console.error("Source node data not found:", sourceNodeId);
@@ -356,7 +383,7 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
     },
 
     runTransform: (nodeId, sourceNodeId, operations) => {
-        const sourceNode = get().nodes[sourceNodeId];
+        const sourceNode = get().getNodeData(sourceNodeId);
         if (!sourceNode) {
             console.error('Transform: Source node not found');
             return;
@@ -460,66 +487,11 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
         }, 100);
     },
 
-    executeJoinNode: (nodeId) => {
-        // Get the Join Node data from useAppStore
-        const joinNode = (window as any).__appStore?.getState().nodes.find((n: any) => n.id === nodeId);
-        if (!joinNode || joinNode.type !== 'join') {
-            console.error('Join node not found');
-            return;
-        }
-
-        const joinData = joinNode.data;
-        const mainInputId = joinData.inputs[0]?.id;
-        const lookupInputId = joinData.inputs[1]?.id;
-
-        if (!mainInputId || !lookupInputId) {
-            set((state) => ({
-                nodes: {
-                    ...state.nodes,
-                    [nodeId]: {
-                        rawData: [],
-                        schema: [],
-                        status: 'ERROR',
-                        errorDetails: { rowIndex: -1, message: 'Both inputs must be connected' },
-                        rowCount: 0
-                    }
-                }
-            }));
-            return;
-        }
-
-        const mainData = get().nodes[mainInputId];
-        const lookupData = get().nodes[lookupInputId];
-
-        if (!mainData || !lookupData) {
-            set((state) => ({
-                nodes: {
-                    ...state.nodes,
-                    [nodeId]: {
-                        rawData: [],
-                        schema: [],
-                        status: 'ERROR',
-                        errorDetails: { rowIndex: -1, message: 'Source data not found' },
-                        rowCount: 0
-                    }
-                }
-            }));
-            return;
-        }
-
-        if (!joinData.leftKey || !joinData.rightKey || !joinData.targetColumns || joinData.targetColumns.length === 0) {
-            set((state) => ({
-                nodes: {
-                    ...state.nodes,
-                    [nodeId]: {
-                        rawData: [],
-                        schema: [],
-                        status: 'ERROR',
-                        errorDetails: { rowIndex: -1, message: 'Join configuration incomplete' },
-                        rowCount: 0
-                    }
-                }
-            }));
+    runCombineTransform: (nodeId, sourceNodeIds, operations) => {
+        // Validate all sources exist
+        const sources = sourceNodeIds.map(sid => get().getNodeData(sid)).filter((s): s is BatchNodeData => !!s);
+        if (sources.length === 0) {
+            console.error('CombineTransform: No valid source nodes found');
             return;
         }
 
@@ -536,52 +508,114 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
         }));
 
         setTimeout(() => {
-            const result = executeJoin({
-                mainData: mainData.rawData,
-                lookupData: lookupData.rawData,
-                leftKey: joinData.leftKey!,
-                rightKey: joinData.rightKey!,
-                targetColumns: joinData.targetColumns!
-            });
+            try {
+                // Find the combine operation
+                const combineOp = operations.find((op: any) => op.type === 'combine');
+                const otherOps = operations.filter((op: any) => op.type !== 'combine');
 
-            if (result.success && result.data) {
-                // Build new schema by merging
-                const newCols: ColumnMetadata[] = [];
+                let combinedData: any[] = [];
+                let combinedSchema: any[] = [];
 
-                // Add target columns from lookup
-                joinData.targetColumns!.forEach((col: string) => {
-                    const lookupCol = lookupData.schema.find(c => c.id === col);
-                    let colName = col;
+                if (combineOp && combineOp.combineInputs && combineOp.combineInputs.length > 0) {
+                    // Determine max row count across all sources
+                    const maxRows = Math.max(...sources.map(s => s.rawData.length));
 
-                    // Check for collision
-                    if (mainData.schema.some(c => c.id === col)) {
-                        colName = `${col}_lookup`;
+                    // Build combined schema from selected columns per input
+                    for (const ci of combineOp.combineInputs) {
+                        const srcIndex = ci.sourceInputIndex;
+                        if (srcIndex >= 0 && srcIndex < sources.length) {
+                            const srcSchema = sources[srcIndex].schema || [];
+                            for (const colId of ci.columns) {
+                                const colMeta = srcSchema.find((c: any) => c.id === colId);
+                                if (colMeta && !combinedSchema.find((c: any) => c.id === colMeta.id)) {
+                                    combinedSchema.push({ ...colMeta });
+                                }
+                            }
+                        }
                     }
 
-                    if (lookupCol) {
-                        newCols.push({
-                            id: colName,
-                            name: colName,
-                            type: lookupCol.type,
-                            unit: lookupCol.unit
-                        });
+                    // Build combined data row-by-row
+                    for (let i = 0; i < maxRows; i++) {
+                        const row: any = {};
+                        for (const ci of combineOp.combineInputs) {
+                            const srcIndex = ci.sourceInputIndex;
+                            if (srcIndex >= 0 && srcIndex < sources.length) {
+                                const srcRow = sources[srcIndex].rawData[i];
+                                for (const colId of ci.columns) {
+                                    row[colId] = srcRow ? srcRow[colId] : null;
+                                }
+                            }
+                        }
+                        combinedData.push(row);
                     }
-                });
+                } else {
+                    // No combine op — fallback to first source
+                    if (sources.length > 0) {
+                        combinedData = [...sources[0].rawData];
+                        combinedSchema = [...sources[0].schema];
+                    }
+                }
 
-                const finalSchema = [...mainData.schema, ...newCols];
+                // Apply remaining operations (delete, rename, select)
+                for (const op of otherOps) {
+                    switch (op.type) {
+                        case 'delete':
+                            if (op.column) {
+                                combinedData = combinedData.map((row: any) => {
+                                    const newRow = { ...row };
+                                    delete newRow[op.column];
+                                    return newRow;
+                                });
+                                combinedSchema = combinedSchema.filter((col: any) => col.id !== op.column);
+                            }
+                            break;
+                        case 'rename':
+                            if (op.column && op.newName) {
+                                combinedData = combinedData.map((row: any) => {
+                                    const newRow = { ...row };
+                                    if (op.column in newRow) {
+                                        newRow[op.newName] = newRow[op.column];
+                                        delete newRow[op.column];
+                                    }
+                                    return newRow;
+                                });
+                                combinedSchema = combinedSchema.map((col: any) =>
+                                    col.id === op.column
+                                        ? { ...col, id: op.newName, name: op.newName }
+                                        : col
+                                );
+                            }
+                            break;
+                        case 'select':
+                            if (op.selectedColumns && op.selectedColumns.length > 0) {
+                                combinedData = combinedData.map((row: any) => {
+                                    const newRow: any = {};
+                                    op.selectedColumns.forEach((col: string) => {
+                                        if (col in row) newRow[col] = row[col];
+                                    });
+                                    return newRow;
+                                });
+                                combinedSchema = combinedSchema.filter((col: any) =>
+                                    op.selectedColumns.includes(col.id)
+                                );
+                            }
+                            break;
+                    }
+                }
 
                 set((state) => ({
                     nodes: {
                         ...state.nodes,
                         [nodeId]: {
-                            rawData: result.data!,
-                            schema: finalSchema,
-                            rowCount: result.data!.length,
+                            rawData: combinedData,
+                            schema: combinedSchema,
+                            rowCount: combinedData.length,
                             status: 'SUCCESS'
                         }
                     }
                 }));
-            } else {
+
+            } catch (error: any) {
                 set((state) => ({
                     nodes: {
                         ...state.nodes,
@@ -589,7 +623,7 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
                             rawData: [],
                             schema: [],
                             status: 'ERROR',
-                            errorDetails: result.error,
+                            errorDetails: { rowIndex: -1, message: "Combine transform failed: " + error.message },
                             rowCount: 0
                         }
                     }
@@ -598,3 +632,4 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
         }, 100);
     }
 }));
+

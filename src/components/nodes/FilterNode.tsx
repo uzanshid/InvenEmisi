@@ -7,11 +7,14 @@ import { useBatchVisualStore } from '../../store/useBatchVisualStore';
 import { useAppStore } from '../../store/useAppStore';
 import { useBatchDataStore } from '../../store/useBatchDataStore';
 import { useCascadeRun } from '../../hooks/useCascadeRun';
+import NoteIndicator from './NoteIndicator';
+import NoteEditor from './NoteEditor';
 
 const FilterNode: React.FC<NodeProps<FilterNodeData>> = ({ id, data, selected }) => {
     const openModal = useBatchVisualStore((state) => state.openModal);
     const updateNodeData = useAppStore((state) => state.updateNodeData);
-    const [isMinimized, setIsMinimized] = useState(false);
+    const isMinimized = !!data.isMinimized;
+    const [noteOpen, setNoteOpen] = useState(false);
 
     useCascadeRun(id);
 
@@ -62,13 +65,14 @@ const FilterNode: React.FC<NodeProps<FilterNodeData>> = ({ id, data, selected })
                         type="text"
                         value={data.label}
                         onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="bg-transparent text-sm font-semibold outline-none placeholder-yellow-200 w-full"
+                        className="bg-transparent text-base font-bold outline-none placeholder-yellow-200 w-full"
                         placeholder="Filter"
                     />
                 </div>
                 <div className="flex items-center gap-1.5">
                     <div className={`w-2 h-2 rounded-full ${getStatusColor()} shadow-[0_0_8px_rgba(255,255,255,0.5)]`} />
-                    <button onClick={() => setIsMinimized(!isMinimized)} className="text-white/80 hover:text-white transition-colors" title={isMinimized ? "Expand" : "Minimize"}>
+                    <NoteIndicator note={data.note} onClick={() => setNoteOpen(!noteOpen)} />
+                    <button onClick={() => updateNodeData(id, { isMinimized: !isMinimized })} className="text-white/80 hover:text-white transition-colors" title={isMinimized ? "Expand" : "Minimize"}>
                         {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
                     </button>
                     <button onClick={() => openModal(id)} className="text-white/80 hover:text-white transition-colors" title="View Data">
@@ -170,6 +174,17 @@ const FilterNode: React.FC<NodeProps<FilterNodeData>> = ({ id, data, selected })
                         <span>In: {sourceNodeData?.rowCount ?? '-'}</span>
                         <span>Out: {nodeStoreData?.rowCount ?? '-'}</span>
                     </div>
+
+                    {/* Note Editor */}
+                    {noteOpen && (
+                        <NoteEditor
+                            note={data.note}
+                            onChange={(note) => updateNodeData(id, { note })}
+                            isOpen={noteOpen}
+                            onToggle={() => setNoteOpen(false)}
+                            accentColor="yellow"
+                        />
+                    )}
                 </div>
             )}
 

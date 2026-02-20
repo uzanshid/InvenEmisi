@@ -1,6 +1,7 @@
 import type { Node, Edge } from 'reactflow';
 import type { NodeData, ProcessNodeData } from '../types';
 import { math } from './mathConfig';
+import { useBatchDataStore } from '../store/useBatchDataStore';
 
 export interface CalculationResult {
     nodeId: string;
@@ -339,8 +340,48 @@ function getNodeOutputValue(
         return calculatedValues.get(node.id) ?? null;
     }
 
+    // Dataset nodes don't have a single scalar value (handled via aggregation)
     // Group nodes don't have values
     return null;
+}
+
+/**
+ * Detect aggregate functions in a Process node formula
+ * Syntax: $SUM_[column], $AVG_[column], $MIN_[column], $MAX_[column], $COUNT_[column]
+ */
+function detectProcessAggregates(formula: string): { funcName: string; column: string; fullMatch: string }[] {
+    const results: { funcName: string; column: string; fullMatch: string }[] = [];
+    const regex = /\$([A-Z]+)_\[([^\]]+)\]/g;
+    let match;
+    while ((match = regex.exec(formula)) !== null) {
+        results.push({
+            funcName: match[1], // SUM, AVG, MIN, MAX, COUNT
+            column: match[2],
+            fullMatch: match[0],
+        });
+    }
+    return results;
+}
+
+/**
+ * Compute aggregate value from batch data rows
+ */
+function computeAggregate(funcName: string, column: string, rows: any[]): number | null {
+    const values = rows
+        .map(row => row[column])
+        .filter(v => v !== null && v !== undefined && !isNaN(Number(v)))
+        .map(v => Number(v));
+
+    if (values.length === 0) return null;
+
+    switch (funcName) {
+        case 'SUM': return values.reduce((s, v) => s + v, 0);
+        case 'AVG': return values.reduce((s, v) => s + v, 0) / values.length;
+        case 'MIN': return Math.min(...values);
+        case 'MAX': return Math.max(...values);
+        case 'COUNT': return values.length;
+        default: return null;
+    }
 }
 
 /**
@@ -502,8 +543,43 @@ function evaluateFormula(
         return { value: null, error: 'No formula defined' };
     }
 
+    // Detect aggregate functions ($AVG_[col], $SUM_[col], etc.)
+    const aggregates = detectProcessAggregates(formula);
+
     // Build scope from inputs
     const unitScope: Record<string, UnitValue> = {};
+    const mathScopeAggregates: Record<string, number> = {};
+    let workingFormula = formula;
+
+    // Check if any input connects to a dataset node — if so, resolve aggregates
+    if (aggregates.length > 0) {
+        const batchStore = useBatchDataStore.getState();
+
+        // Find dataset source nodes connected to this process node
+        for (const input of processData.inputs) {
+            const edge = incomingEdges.find((e) => e.targetHandle === input.id);
+            if (!edge) continue;
+            const sourceNode = nodes.find((n) => n.id === edge.source);
+            if (!sourceNode) continue;
+
+            // Check if source is a batch-type node (dataset, filter, tableMath, transform, join)
+            const batchTypes = ['dataset', 'filter', 'tableMath', 'transform', 'join'];
+            if (batchTypes.includes(sourceNode.data.type)) {
+                const batchData = batchStore.getNodeData(sourceNode.id);
+                if (batchData && batchData.rawData && batchData.rawData.length > 0) {
+                    // Compute each aggregate from this source's data
+                    for (const agg of aggregates) {
+                        const value = computeAggregate(agg.funcName, agg.column, batchData.rawData);
+                        if (value !== null) {
+                            const safeName = `__agg_${agg.funcName}_${agg.column}`.replace(/[^a-zA-Z0-9_]/g, '_');
+                            mathScopeAggregates[safeName] = value;
+                            workingFormula = workingFormula.replace(agg.fullMatch, safeName);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     processData.inputs.forEach((input) => {
         const edge = incomingEdges.find((e) => e.targetHandle === input.id);
@@ -519,7 +595,22 @@ function evaluateFormula(
     });
 
     try {
-        // Tokenize and evaluate with units
+        // If we have aggregate values, use math.js evaluation directly
+        if (Object.keys(mathScopeAggregates).length > 0) {
+            const mathScope: Record<string, number> = { ...mathScopeAggregates };
+            // Also add scalar inputs from connected non-dataset nodes
+            Object.entries(unitScope).forEach(([key, uv]) => {
+                mathScope[key] = uv.value;
+            });
+
+            const numericResult = math.evaluate(workingFormula, mathScope);
+            if (typeof numericResult === 'number') {
+                return { value: numericResult.toLocaleString('en-US', { maximumFractionDigits: 4 }) };
+            }
+            return { value: String(numericResult) };
+        }
+
+        // Tokenize and evaluate with units (original path for scalar-only formulas)
         const tokens = tokenize(formula);
         const result = evaluateWithUnits(tokens, unitScope);
 
@@ -528,13 +619,7 @@ function evaluateFormula(
         }
 
         // Fallback: evaluate with math.js for complex expressions
-        // BUT: If we have units and the unit calculation failed (result is null), it likely means a unit mismatch
-        // We should check if the formula only involves addition/subtraction to be strict
         if (!result && Object.keys(unitScope).length > 0) {
-            // If simple addition/subtraction, we should have handled it in evaluateWithUnits
-            // If we didn't, it implies mismatched units or unsupported op.
-            // To support the user request "seharusnya tidak bisa dijumlahkan", we should error out on unit mismatch
-            // We can heuristic check: if formula has + or - and we failed unit calc, it's an error.
             if (/[+\-]/.test(formula) && !/[*/^]/.test(formula)) {
                 return { value: null, error: 'Unit mismatch: Cannot add/subtract different units' };
             }
