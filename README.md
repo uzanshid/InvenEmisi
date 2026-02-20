@@ -86,7 +86,7 @@ Versi saat ini (v0.5 Beta) mencakup:
 *   [x] Aggregate Functions ($SUM, $AVG, $MIN, $MAX)
 *   [x] Cascade Auto-Run System
 *   [x] **UX Overhaul** (Zoom, MiniMap, Multi-select, Grouping)
-*   [ ] Export/Import project (Next Priority)
+*   [x] Export/Import project
 *   [ ] Reporting module (Generasi PDF/Excel)
 *   [ ] Analisis ketidakpastian (Uncertainty Analysis)
 
