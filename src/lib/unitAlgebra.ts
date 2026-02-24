@@ -192,6 +192,17 @@ export function deriveUnitFromFormula(
     // Simple formula analysis (for common patterns)
     // This is a simplified version - full AST parsing would be more robust
 
+    // Pattern: standalone aggregate like $AVG_[col] (no other operators)
+    const standaloneAggPattern = /^\s*\$[A-Z]+_\[([^\]]+)\]\s*$/;
+    const standaloneAggMatch = formula.match(standaloneAggPattern);
+    if (standaloneAggMatch) {
+        const colName = standaloneAggMatch[1];
+        if (columnUnits[colName]) {
+            return { unit: columnUnits[colName] };
+        }
+        return { unit: 'unitless' };
+    }
+
     // Pattern: [A] * [B] or [A] / [B]
     const simplePattern = /^\s*\[([^\]]+)\]\s*([*\/])\s*\[([^\]]+)\]\s*$/;
     const match = formula.match(simplePattern);
@@ -250,6 +261,16 @@ function deriveUnitFromComplexFormula(
     let remaining = formula.trim();
 
     while (remaining.length > 0) {
+        // Match aggregate reference $FUNC_[Name] (must check BEFORE plain [ref])
+        const aggRefMatch = remaining.match(/^(\$[A-Z]+_\[([^\]]+)\])/);
+        if (aggRefMatch) {
+            const fullSyntax = aggRefMatch[1];
+            // Use the full syntax as key (matches how refUnits is built)
+            tokens.push({ type: 'ref', value: fullSyntax });
+            remaining = remaining.slice(aggRefMatch[0].length).trim();
+            continue;
+        }
+
         // Match column reference [Name]
         const refMatch = remaining.match(/^\[([^\]]+)\]/);
         if (refMatch) {

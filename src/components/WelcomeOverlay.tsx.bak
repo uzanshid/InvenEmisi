@@ -58,13 +58,13 @@ export const WelcomeOverlay: React.FC = () => {
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-blue-950/80 to-indigo-950/90 backdrop-blur-sm" />
+            {/* Backdrop — matches brand gradient */}
+            <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'linear-gradient(135deg, #0d8fb5cc 0%, #1aada8cc 50%, #2dc88acc 100%)' }} />
 
             {/* Card */}
-            <div className="relative w-full max-w-lg mx-4 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl shadow-blue-500/10 border border-white/20 overflow-hidden animate-in">
-                {/* Header gradient */}
-                <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+            <div className="relative w-full max-w-lg mx-4 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/30 overflow-hidden animate-in">
+                {/* Top brand stripe */}
+                <div className="h-1.5" style={{ background: 'linear-gradient(to right, #12abd9, #2cc0b4, #4ed791)' }} />
 
                 <div className="p-8">
                     {/* Logo & Title */}
@@ -76,17 +76,23 @@ export const WelcomeOverlay: React.FC = () => {
                                 className="w-24 h-24 object-contain drop-shadow-lg"
                             />
                         </div>
-                        <h1 className="text-3xl font-bold text-slate-800">InvenEmis</h1>
-                        <p className="text-sm text-slate-500 mt-1 font-normal">Visual Node Editor</p>
+                        <h1 className="text-3xl font-bold" style={{ color: '#12abd9' }}>InvenEmis</h1>
+                        <p className="text-sm text-slate-400 mt-1 font-normal">Visual Node Editor</p>
                     </div>
 
                     {/* Actions */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
                         <button
                             onClick={handleNewProject}
-                            className="flex flex-col items-center gap-2 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200/60 rounded-xl transition-all group"
+                            className="flex flex-col items-center gap-2 p-5 rounded-xl transition-all group border"
+                            style={{ background: 'linear-gradient(135deg, #e8f8fd, #e0f7f5)', borderColor: '#b0e4f0' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'linear-gradient(135deg, #c8eef8, #c0f0eb)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'linear-gradient(135deg, #e8f8fd, #e0f7f5)')}
                         >
-                            <div className="p-2.5 bg-blue-500 rounded-lg text-white group-hover:scale-110 transition-transform shadow-md shadow-blue-500/20">
+                            <div
+                                className="p-2.5 rounded-lg text-white group-hover:scale-110 transition-transform shadow-md"
+                                style={{ background: 'linear-gradient(135deg, #12abd9, #2cc0b4)' }}
+                            >
                                 <Plus size={22} />
                             </div>
                             <div>
@@ -98,9 +104,15 @@ export const WelcomeOverlay: React.FC = () => {
                         <button
                             onClick={handleImportClick}
                             disabled={isImporting}
-                            className="flex flex-col items-center gap-2 p-5 bg-gradient-to-br from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border border-emerald-200/60 rounded-xl transition-all group disabled:opacity-50"
+                            className="flex flex-col items-center gap-2 p-5 rounded-xl transition-all group border disabled:opacity-50"
+                            style={{ background: 'linear-gradient(135deg, #e4f9f0, #e0fae8)', borderColor: '#a8e8cc' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'linear-gradient(135deg, #c4f2e0, #c0f5d0)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'linear-gradient(135deg, #e4f9f0, #e0fae8)')}
                         >
-                            <div className="p-2.5 bg-emerald-500 rounded-lg text-white group-hover:scale-110 transition-transform shadow-md shadow-emerald-500/20">
+                            <div
+                                className="p-2.5 rounded-lg text-white group-hover:scale-110 transition-transform shadow-md"
+                                style={{ background: 'linear-gradient(135deg, #2cc0b4, #4ed791)' }}
+                            >
                                 <FolderOpen size={22} />
                             </div>
                             <div>
@@ -124,8 +136,8 @@ export const WelcomeOverlay: React.FC = () => {
                     {recentProjects.length > 0 && (
                         <div>
                             <div className="flex items-center gap-1.5 mb-3">
-                                <Clock size={12} className="text-slate-400" />
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Recent Projects</span>
+                                <Clock size={12} style={{ color: '#2cc0b4' }} />
+                                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#2cc0b4' }}>Recent Projects</span>
                             </div>
                             <div className="space-y-1.5 max-h-40 overflow-y-auto">
                                 {recentProjects.map((project: RecentProject, idx: number) => (
