@@ -1,4 +1,4 @@
-import React, { memo, useState, useMemo, useCallback } from 'react';
+import React, { memo, useState, useCallback } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import type { NodeProps } from 'reactflow';
 import { Columns, Eye, Minimize2, Maximize2, Trash2, Edit3, Plus, X, Combine, CheckSquare, Square } from 'lucide-react';
@@ -87,13 +87,7 @@ const TransformNode: React.FC<NodeProps<TransformNodeData>> = ({ id, data, selec
         }
     });
 
-    // Gather source data by input index (for combine)
-    const sourceDatas = useMemo(() => {
-        return (data.inputs || []).map((input: HandleData) => {
-            const info = inputSourceMap[input.id];
-            return info?.data || undefined;
-        });
-    }, [data.inputs, inputSourceMap]);
+
 
     // Primary source (first connected batch input)
     const firstConnectedInput = data.inputs.find((inp: HandleData) => inputSourceMap[inp.id]);
