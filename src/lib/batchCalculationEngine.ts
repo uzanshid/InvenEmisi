@@ -43,7 +43,7 @@ math.import({
 // Whitelist of known function names that are allowed without brackets
 const KNOWN_FUNCTIONS = new Set([
     // Custom functions
-    'IF', 'IFS', 'SWITCH', 'XLOOKUP',
+    'IF', 'IFS', 'SWITCH', 'XLOOKUP', 'CEILINGLOOKUP', 'FLOORLOOKUP',
     // Common math.js functions
     'sqrt', 'abs', 'pow', 'round', 'ceil', 'floor', 'log', 'log2', 'log10', 'exp',
     'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2',
@@ -113,6 +113,64 @@ const xlookupImpl = function (lookupValue: any, lookupArray: any, returnArray: a
 };
 (xlookupImpl as any).rawArgs = false;
 math.import({ XLOOKUP: xlookupImpl }, { override: true });
+
+// CEILINGLOOKUP(lookupValue, lookupColumn, returnColumn, defaultValue?)
+// Finds the smallest value in lookupColumn that is >= lookupValue, returns corresponding returnColumn value
+const ceilinglookupImpl = function (lookupValue: any, lookupArray: any, returnArray: any, defaultValue?: any) {
+    const lookupArr = lookupArray?.toArray ? lookupArray.toArray() : lookupArray;
+    const returnArr = returnArray?.toArray ? returnArray.toArray() : returnArray;
+
+    if (!Array.isArray(lookupArr) || !Array.isArray(returnArr)) {
+        throw new Error('CEILINGLOOKUP: lookup and return columns must be arrays');
+    }
+
+    const numericLookup = Number(lookupValue);
+    if (isNaN(numericLookup)) {
+        throw new Error('CEILINGLOOKUP: lookup value must be numeric');
+    }
+
+    // Build indexed pairs, filter to numeric values, sort ascending
+    const indexed = lookupArr
+        .map((v: any, i: number) => ({ val: Number(v), idx: i }))
+        .filter((item: any) => !isNaN(item.val))
+        .sort((a: any, b: any) => a.val - b.val);
+
+    // Find smallest value >= lookupValue
+    const match = indexed.find((item: any) => item.val >= numericLookup);
+    if (match) return returnArr[match.idx];
+    return defaultValue !== undefined ? defaultValue : null;
+};
+(ceilinglookupImpl as any).rawArgs = false;
+math.import({ CEILINGLOOKUP: ceilinglookupImpl }, { override: true });
+
+// FLOORLOOKUP(lookupValue, lookupColumn, returnColumn, defaultValue?)
+// Finds the largest value in lookupColumn that is <= lookupValue, returns corresponding returnColumn value
+const floorlookupImpl = function (lookupValue: any, lookupArray: any, returnArray: any, defaultValue?: any) {
+    const lookupArr = lookupArray?.toArray ? lookupArray.toArray() : lookupArray;
+    const returnArr = returnArray?.toArray ? returnArray.toArray() : returnArray;
+
+    if (!Array.isArray(lookupArr) || !Array.isArray(returnArr)) {
+        throw new Error('FLOORLOOKUP: lookup and return columns must be arrays');
+    }
+
+    const numericLookup = Number(lookupValue);
+    if (isNaN(numericLookup)) {
+        throw new Error('FLOORLOOKUP: lookup value must be numeric');
+    }
+
+    // Build indexed pairs, filter to numeric values, sort descending
+    const indexed = lookupArr
+        .map((v: any, i: number) => ({ val: Number(v), idx: i }))
+        .filter((item: any) => !isNaN(item.val))
+        .sort((a: any, b: any) => b.val - a.val);
+
+    // Find largest value <= lookupValue
+    const match = indexed.find((item: any) => item.val <= numericLookup);
+    if (match) return returnArr[match.idx];
+    return defaultValue !== undefined ? defaultValue : null;
+};
+(floorlookupImpl as any).rawArgs = false;
+math.import({ FLOORLOOKUP: floorlookupImpl }, { override: true });
 
 export interface ScalarInput {
     value: number;
@@ -276,11 +334,11 @@ export const executeBatchFormula = (
         }
     }
 
-    // Pre-build column arrays for XLOOKUP support
+    // Pre-build column arrays for XLOOKUP/CEILINGLOOKUP/FLOORLOOKUP support
     // Each column becomes available as __col_ColumnName (full column array)
     const columnArrays: Record<string, any[]> = {};
-    const hasXLOOKUP = formula.includes('XLOOKUP');
-    if (hasXLOOKUP) {
+    const hasLookupFunc = formula.includes('XLOOKUP') || formula.includes('CEILINGLOOKUP') || formula.includes('FLOORLOOKUP');
+    if (hasLookupFunc) {
         existingSchema.forEach(colName => {
             const safeArrayName = '__col_' + sanitizeVarName(colName);
             columnArrays[safeArrayName] = rows.map(r => {
@@ -329,17 +387,17 @@ export const executeBatchFormula = (
             cleanFormula = cleanFormula.replace(new RegExp(`\\[${escapedName}\\]`, 'g'), safeVarName);
         });
 
-        // Inject XLOOKUP column arrays into scope
-        if (hasXLOOKUP) {
+        // Inject lookup column arrays into scope
+        if (hasLookupFunc) {
             Object.entries(columnArrays).forEach(([arrayName, arrayData]) => {
                 cleanScope[arrayName] = arrayData;
             });
 
-            // Replace column references inside XLOOKUP 2nd and 3rd args with array versions
-            // Pattern: XLOOKUP(expr, [Col1], [Col2], ...)
+            // Replace column references inside XLOOKUP/CEILINGLOOKUP/FLOORLOOKUP 2nd and 3rd args with array versions
+            // Pattern: FUNCNAME(expr, [Col1], [Col2], ...)
             cleanFormula = cleanFormula.replace(
-                /XLOOKUP\s*\(([^,]+),\s*([^,]+),\s*([^,)]+)(?:,\s*([^)]+))?\)/g,
-                (_match, lookupVal, lookupCol, returnCol, defaultVal) => {
+                /(XLOOKUP|CEILINGLOOKUP|FLOORLOOKUP)\s*\(([^,]+),\s*([^,]+),\s*([^,)]+)(?:,\s*([^)]+))?\)/g,
+                (_match, funcName, lookupVal, lookupCol, returnCol, defaultVal) => {
                     // Convert [ColName] references to __col_ColName for lookup/return args
                     const toArray = (s: string) => {
                         return s.trim().replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\b/g, (m: string) => {
@@ -351,7 +409,7 @@ export const executeBatchFormula = (
                     };
                     const args = [lookupVal.trim(), toArray(lookupCol), toArray(returnCol)];
                     if (defaultVal) args.push(defaultVal.trim());
-                    return `XLOOKUP(${args.join(', ')})`;
+                    return `${funcName}(${args.join(', ')})`;
                 }
             );
         }

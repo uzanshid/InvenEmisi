@@ -1,7 +1,7 @@
 import React, { memo, useState } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import type { NodeProps } from 'reactflow';
-import { Download, Eye, FileSpreadsheet, Minimize2, Maximize2, Check, AlertCircle } from 'lucide-react';
+import { Download, Eye, FileSpreadsheet, Minimize2, Maximize2, Check, AlertCircle, Sparkles } from 'lucide-react';
 import type { ExportNodeData } from '../../types';
 import { useBatchVisualStore } from '../../store/useBatchVisualStore';
 import { useBatchDataStore } from '../../store/useBatchDataStore';
@@ -10,12 +10,14 @@ import { useAppStore } from '../../store/useAppStore';
 import { utils, writeFile } from 'xlsx';
 import NoteIndicator from './NoteIndicator';
 import NoteEditor from './NoteEditor';
+import { generateAIReportPayload } from '../../utils/aiExport';
 
 const ExportNode: React.FC<NodeProps<ExportNodeData>> = ({ id, data, selected }) => {
     const openModal = useBatchVisualStore((state) => state.openModal);
     const updateNodeData = useAppStore((state) => state.updateNodeData);
     const isMinimized = !!data.isMinimized;
     const [exportStatus, setExportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [aiExportStatus, setAiExportStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [noteOpen, setNoteOpen] = useState(false);
 
     // Get connected source node
@@ -61,6 +63,35 @@ const ExportNode: React.FC<NodeProps<ExportNodeData>> = ({ id, data, selected })
             console.error('Export failed:', error);
             setExportStatus('error');
             setTimeout(() => setExportStatus('idle'), 2000);
+        }
+    };
+
+    const handleExportAI = () => {
+        if (!isConnected || rowCount === 0) {
+            setAiExportStatus('error');
+            setTimeout(() => setAiExportStatus('idle'), 2000);
+            return;
+        }
+
+        try {
+            const payload = generateAIReportPayload(id);
+            const fileName = `${data.label || 'Project'}_AI_Report`;
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            setAiExportStatus('success');
+            setTimeout(() => setAiExportStatus('idle'), 2000);
+        } catch (error) {
+            console.error('AI Export failed:', error);
+            setAiExportStatus('error');
+            setTimeout(() => setAiExportStatus('idle'), 2000);
         }
     };
 
@@ -179,6 +210,26 @@ const ExportNode: React.FC<NodeProps<ExportNodeData>> = ({ id, data, selected })
                                     <><AlertCircle size={14} /> Failed</>
                                 ) : (
                                     <><Download size={14} /> Export Data</>
+                                )}
+                            </button>
+
+                            {/* AI Export Button */}
+                            <button
+                                onClick={handleExportAI}
+                                disabled={!isConnected || rowCount === 0}
+                                className={`w-full flex items-center justify-center gap-2 py-2 mt-2 rounded transition-colors font-medium text-xs ${aiExportStatus === 'success'
+                                    ? 'bg-purple-500 text-white'
+                                    : aiExportStatus === 'error'
+                                        ? 'bg-red-500 text-white'
+                                        : 'bg-purple-100 text-purple-800 hover:bg-purple-200 disabled:opacity-50 disabled:cursor-not-allowed'
+                                    }`}
+                            >
+                                {aiExportStatus === 'success' ? (
+                                    <><Check size={14} /> AI Report Exported!</>
+                                ) : aiExportStatus === 'error' ? (
+                                    <><AlertCircle size={14} /> Failed</>
+                                ) : (
+                                    <><Sparkles size={14} /> Export AI Report (.json)</>
                                 )}
                             </button>
                         </>

@@ -18,11 +18,11 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ title, children
                 onClick={() => setIsOpen(!isOpen)}
             >
                 {isOpen ? (
-                    <ChevronDown size={14} className="text-slate-400 group-hover:text-slate-600" />
+                    <ChevronDown size={14} style={{ color: '#2cc0b4' }} />
                 ) : (
-                    <ChevronRight size={14} className="text-slate-400 group-hover:text-slate-600" />
+                    <ChevronRight size={14} style={{ color: '#2cc0b4' }} />
                 )}
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider group-hover:text-slate-600 transition-colors">
+                <div className="text-xs font-semibold uppercase tracking-wider transition-colors group-hover:opacity-80" style={{ color: '#2cc0b4' }}>
                     {title}
                 </div>
             </div>
@@ -31,6 +31,34 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ title, children
     );
 };
 
+const NodeCard = ({
+    nodeType,
+    label,
+    icon,
+    accentColor,
+    onDragStart,
+}: {
+    nodeType: NodeType;
+    label: string;
+    icon: React.ReactNode;
+    accentColor: string;
+    onDragStart: (event: React.DragEvent, nodeType: NodeType) => void;
+}) => (
+    <div
+        className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:shadow-md transition-all select-none"
+        style={{ '--accent': accentColor } as React.CSSProperties}
+        onDragStart={(event) => onDragStart(event, nodeType)}
+        onMouseEnter={e => (e.currentTarget.style.borderColor = accentColor)}
+        onMouseLeave={e => (e.currentTarget.style.borderColor = '')}
+        draggable
+    >
+        <div className="p-2 rounded-md" style={{ background: `${accentColor}20`, color: accentColor }}>
+            {icon}
+        </div>
+        <span className="text-sm font-medium text-slate-700">{label}</span>
+    </div>
+);
+
 export const Sidebar = () => {
     const onDragStart = (event: React.DragEvent, nodeType: NodeType) => {
         event.dataTransfer.setData('application/reactflow', nodeType);
@@ -38,146 +66,53 @@ export const Sidebar = () => {
     };
 
     return (
-        <aside className="w-[250px] h-screen bg-slate-50 border-r border-slate-200 p-4 flex flex-col gap-4 overflow-y-auto">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-                Workbench
-            </h1>
+        <aside className="w-[250px] h-screen border-r border-slate-200 flex flex-col gap-4 overflow-y-auto"
+            style={{ background: 'linear-gradient(180deg, #f0fcfd 0%, #f5fffe 60%, #f8fff9 100%)' }}>
 
-            <CollapsibleSection title="Data Nodes" defaultOpen={false}>
-                <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-blue-500 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'source')}
-                    draggable
-                >
-                    <div className="p-2 bg-blue-100 rounded-md text-blue-600">
-                        <Database size={20} />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Source Node</span>
-                </div>
+            {/* Header image — replaces text */}
+            <div className="px-3 pt-4 pb-2">
+                <img
+                    src="/header.png"
+                    alt="InvenEmis"
+                    className="w-full object-contain"
+                    style={{ maxHeight: '56px' }}
+                />
+            </div>
 
-                <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-emerald-500 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'factor')}
-                    draggable
-                >
-                    <div className="p-2 bg-emerald-100 rounded-md text-emerald-600">
-                        <FileDigit size={20} />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Factor Node</span>
-                </div>
+            {/* Thin brand separator */}
+            <div className="mx-3 h-px" style={{ background: 'linear-gradient(to right, #12abd9, #2cc0b4, #4ed791)' }} />
 
-                <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-purple-500 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'process')}
-                    draggable
-                >
-                    <div className="p-2 bg-purple-100 rounded-md text-purple-600">
-                        <Settings size={20} />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Process Node</span>
-                </div>
-            </CollapsibleSection>
+            <div className="px-4 flex flex-col gap-4">
+                <CollapsibleSection title="Data Nodes" defaultOpen={false}>
+                    <NodeCard nodeType="source" label="Source Node" icon={<Database size={20} />} accentColor="#12abd9" onDragStart={onDragStart} />
+                    <NodeCard nodeType="factor" label="Factor Node" icon={<FileDigit size={20} />} accentColor="#2cc0b4" onDragStart={onDragStart} />
+                    <NodeCard nodeType="process" label="Process Node" icon={<Settings size={20} />} accentColor="#4ed791" onDragStart={onDragStart} />
+                </CollapsibleSection>
 
-            <CollapsibleSection title="Organization" defaultOpen={false}>
-                <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-indigo-500 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'groupBox')}
-                    draggable
-                >
-                    <div className="p-2 bg-indigo-100 rounded-md text-indigo-600">
-                        <Layers size={20} />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Group</span>
-                </div>
+                <CollapsibleSection title="Organization" defaultOpen={false}>
+                    <NodeCard nodeType="groupBox" label="Group" icon={<Layers size={20} />} accentColor="#1aada8" onDragStart={onDragStart} />
+                    <NodeCard nodeType="passthrough" label="PassThrough" icon={<ArrowRightLeft size={20} />} accentColor="#0d8fb5" onDragStart={onDragStart} />
+                </CollapsibleSection>
 
-                <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-fuchsia-500 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'passthrough')}
-                    draggable
-                >
-                    <div className="p-2 bg-fuchsia-100 rounded-md text-fuchsia-600">
-                        <ArrowRightLeft size={20} />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">PassThrough</span>
-                </div>
-            </CollapsibleSection>
+                <CollapsibleSection title="Batch Processing" defaultOpen={false}>
+                    <NodeCard nodeType="dataset" label="Dataset" icon={<FileSpreadsheet size={20} />} accentColor="#12abd9" onDragStart={onDragStart} />
+                    <NodeCard nodeType="filter" label="Filter" icon={<Filter size={20} />} accentColor="#2cc0b4" onDragStart={onDragStart} />
+                    <NodeCard nodeType="tableMath" label="TableMath" icon={<Calculator size={20} />} accentColor="#38c4a0" onDragStart={onDragStart} />
+                    <NodeCard nodeType="transform" label="Transform" icon={<Columns size={20} />} accentColor="#4ed791" onDragStart={onDragStart} />
+                    <NodeCard nodeType="ghost" label="Ghost" icon={<Ghost size={20} />} accentColor="#7ec8e3" onDragStart={onDragStart} />
+                </CollapsibleSection>
 
-            <CollapsibleSection title="Batch Processing" defaultOpen={false}>
-                <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-orange-500 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'dataset')}
-                    draggable
-                >
-                    <div className="p-2 bg-orange-100 rounded-md text-orange-600">
-                        <FileSpreadsheet size={20} />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Dataset</span>
-                </div>
+                <CollapsibleSection title="Post Process" defaultOpen={false}>
+                    <NodeCard nodeType="export" label="Export" icon={<Download size={20} />} accentColor="#2cc0b4" onDragStart={onDragStart} />
+                </CollapsibleSection>
+            </div>
 
-                <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-yellow-500 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'filter')}
-                    draggable
-                >
-                    <div className="p-2 bg-yellow-100 rounded-md text-yellow-600">
-                        <Filter size={20} />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Filter</span>
-                </div>
-
-                <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-purple-900 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'tableMath')}
-                    draggable
-                >
-                    <div className="p-2 bg-purple-100 rounded-md text-purple-900">
-                        <Calculator size={20} />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">TableMath</span>
-                </div>
-
-                <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-cyan-600 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'transform')}
-                    draggable
-                >
-                    <div className="p-2 bg-cyan-100 rounded-md text-cyan-600">
-                        <Columns size={20} />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Transform</span>
-                </div>
-
-                <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-slate-500 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'ghost')}
-                    draggable
-                >
-                    <div className="p-2 bg-slate-100 rounded-md text-slate-500">
-                        <Ghost size={20} />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Ghost</span>
-                </div>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Post Process" defaultOpen={false}>
-                <div
-                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm cursor-grab hover:border-emerald-600 hover:shadow-md transition-all select-none"
-                    onDragStart={(event) => onDragStart(event, 'export')}
-                    draggable
-                >
-                    <div className="p-2 bg-emerald-100 rounded-md text-emerald-600">
-                        <Download size={20} />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Export</span>
-                </div>
-            </CollapsibleSection>
-
-            <div className="mt-auto pt-4 border-t border-slate-200">
+            <div className="mt-auto px-4 pb-4 pt-4 border-t border-slate-200">
                 <div className="text-xs text-slate-400 space-y-1">
-                    <div><kbd className="px-1 py-0.5 bg-slate-100 rounded text-[10px]">Ctrl+Z</kbd> Undo</div>
-                    <div><kbd className="px-1 py-0.5 bg-slate-100 rounded text-[10px]">Ctrl+Y</kbd> Redo</div>
-                    <div><kbd className="px-1 py-0.5 bg-slate-100 rounded text-[10px]">Delete</kbd> Remove</div>
-                    <div><kbd className="px-1 py-0.5 bg-slate-100 rounded text-[10px]">Ctrl+Scroll</kbd> Zoom</div>
+                    <div><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded text-[10px]">Ctrl+Z</kbd> Undo</div>
+                    <div><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded text-[10px]">Ctrl+Y</kbd> Redo</div>
+                    <div><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded text-[10px]">Delete</kbd> Remove</div>
+                    <div><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded text-[10px]">Ctrl+Scroll</kbd> Zoom</div>
                 </div>
             </div>
         </aside>

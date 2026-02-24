@@ -13,6 +13,8 @@ const FUNCTION_SUGGESTIONS: Suggestion[] = [
     { label: 'IFS', insertText: 'IFS(', type: 'function', description: 'IFS(cond1, val1, cond2, val2, ...)' },
     { label: 'SWITCH', insertText: 'SWITCH(', type: 'function', description: 'SWITCH(val, case1, res1, ..., default)' },
     { label: 'XLOOKUP', insertText: 'XLOOKUP(', type: 'function', description: 'XLOOKUP(val, lookup_col, return_col, default)' },
+    { label: 'CEILINGLOOKUP', insertText: 'CEILINGLOOKUP(', type: 'function', description: 'CEILINGLOOKUP(val, lookup_col, return_col, default) — Nearest higher' },
+    { label: 'FLOORLOOKUP', insertText: 'FLOORLOOKUP(', type: 'function', description: 'FLOORLOOKUP(val, lookup_col, return_col, default) — Nearest lower' },
     { label: 'sqrt', insertText: 'sqrt(', type: 'function', description: 'sqrt(x) — Square root' },
     { label: 'abs', insertText: 'abs(', type: 'function', description: 'abs(x) — Absolute value' },
     { label: 'pow', insertText: 'pow(', type: 'function', description: 'pow(base, exp) — Power' },

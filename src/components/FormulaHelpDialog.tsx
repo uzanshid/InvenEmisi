@@ -179,6 +179,18 @@ export const FormulaHelpDialog: React.FC<FormulaHelpDialogProps> = ({ isOpen, on
                                         formula="IF([CO2] > $AVG_[CO2], [CO2] * 1.1, [CO2] * 0.9)"
                                         description="Combine IF with aggregates: apply 10% surcharge if above average"
                                     />
+                                    <ExampleBlock
+                                        id="cond-7"
+                                        title="CEILINGLOOKUP - Nearest Higher Match"
+                                        formula="CEILINGLOOKUP([Kapasitas Hitung], [Katalog Kapasitas], [Konsumsi BBM], 0)"
+                                        description='Find the smallest catalog capacity >= calculated capacity, return its fuel consumption. Useful for matching to nearest available size.'
+                                    />
+                                    <ExampleBlock
+                                        id="cond-8"
+                                        title="FLOORLOOKUP - Nearest Lower Match"
+                                        formula={'FLOORLOOKUP([Budget], [Price List], [Product Name], "N/A")'}
+                                        description='Find the largest price that fits within a limit, return corresponding product name.'
+                                    />
                                 </div>
 
                                 <div>
@@ -188,7 +200,9 @@ export const FormulaHelpDialog: React.FC<FormulaHelpDialogProps> = ({ isOpen, on
                                             { name: 'IF(cond, true, false)', desc: 'Returns true-value if condition is met, otherwise false-value' },
                                             { name: 'IFS(c1, v1, c2, v2, ...)', desc: 'Returns value for first matching condition (use true for default)' },
                                             { name: 'SWITCH(val, c1, r1, ..., default)', desc: 'Matches value against cases, returns corresponding result' },
-                                            { name: 'XLOOKUP(val, lookup, return, default)', desc: 'Finds value in lookup column, returns matching value from return column' }
+                                            { name: 'XLOOKUP(val, lookup, return, default)', desc: 'Exact match: finds value in lookup column, returns matching value from return column' },
+                                            { name: 'CEILINGLOOKUP(val, lookup, return, default)', desc: 'Nearest higher: finds smallest value >= val in lookup column, returns from return column' },
+                                            { name: 'FLOORLOOKUP(val, lookup, return, default)', desc: 'Nearest lower: finds largest value <= val in lookup column, returns from return column' }
                                         ].map((fn, i) => (
                                             <div key={i} className="bg-blue-50 border border-blue-200 rounded p-3">
                                                 <code className="text-xs font-mono text-blue-700 font-bold">{fn.name}</code>

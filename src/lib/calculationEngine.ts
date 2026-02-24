@@ -2,6 +2,7 @@ import type { Node, Edge } from 'reactflow';
 import type { NodeData, ProcessNodeData } from '../types';
 import { math } from './mathConfig';
 import { useBatchDataStore } from '../store/useBatchDataStore';
+import { deriveUnitFromFormula } from './unitAlgebra';
 
 export interface CalculationResult {
     nodeId: string;
@@ -604,8 +605,51 @@ function evaluateFormula(
             });
 
             const numericResult = math.evaluate(workingFormula, mathScope);
+
+            // Derive unit: build columnUnits from batch source schema
+            let derivedUnit = '';
+            // Look at aggregates to find the column units
+            if (aggregates.length > 0) {
+                const batchStore = useBatchDataStore.getState();
+                const columnUnitsMap: Record<string, string> = {};
+
+                for (const input of processData.inputs) {
+                    const edge = incomingEdges.find((e) => e.targetHandle === input.id);
+                    if (!edge) continue;
+                    const sourceNode = nodes.find((n) => n.id === edge.source);
+                    if (!sourceNode) continue;
+                    const batchTypes = ['dataset', 'filter', 'tableMath', 'transform', 'join'];
+                    if (batchTypes.includes(sourceNode.data.type)) {
+                        const batchData = batchStore.getNodeData(sourceNode.id);
+                        if (batchData?.schema) {
+                            batchData.schema.forEach((col: any) => {
+                                if (col.unit) columnUnitsMap[col.id || col.name] = col.unit;
+                            });
+                        }
+                    }
+                }
+
+                // For simple aggregate-only formulas, inherit the column unit
+                if (aggregates.length === 1 && Object.keys(unitScope).length === 0) {
+                    const colUnit = columnUnitsMap[aggregates[0].column];
+                    if (colUnit) derivedUnit = colUnit;
+                } else {
+                    // For mixed formulas, try deriveUnitFromFormula from unitAlgebra
+                    const scalarInputsForUnit: Record<string, { value: number; unit: string }> = {};
+                    Object.entries(unitScope).forEach(([key, uv]) => {
+                        const unitStr = formatUnitValue({ ...uv, value: 0 }).trim() || '';
+                        scalarInputsForUnit[key] = { value: uv.value, unit: unitStr };
+                    });
+                    const unitResult = deriveUnitFromFormula(formula, columnUnitsMap, scalarInputsForUnit);
+                    if (unitResult.unit && unitResult.unit !== 'unitless') {
+                        derivedUnit = unitResult.unit;
+                    }
+                }
+            }
+
             if (typeof numericResult === 'number') {
-                return { value: numericResult.toLocaleString('en-US', { maximumFractionDigits: 4 }) };
+                const formatted = numericResult.toLocaleString('en-US', { maximumFractionDigits: 4 });
+                return { value: derivedUnit ? `${formatted} ${derivedUnit}` : formatted };
             }
             return { value: String(numericResult) };
         }
