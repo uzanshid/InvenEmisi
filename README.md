@@ -1,95 +1,97 @@
-# InvenEmisi v0.5 (Beta)
+# InvenEmis
+**Visual Node Editor untuk Inventarisasi Emisi**
 
-**Sistem Inventarisasi Emisi Berbasis Node (Visual Calculation Engine)**
+![InvenEmis Banner](public/header.png)
 
-> **Status: Beta Testing**  
-> Saat ini InvenEmisi memasuki tahap Beta. Kami mengundang para ahli lingkungan, dosen, peneliti, dan praktisi untuk mencoba dan memberikan masukan (feedback) guna penyempurnaan lebih lanjut sebelum rilis stabil.
-
-InvenEmisi adalah aplikasi web modern untuk membantu praktisi lingkungan, insinyur, dan peneliti dalam melakukan perhitungan inventarisasi emisi yang kompleks. Menggunakan pendekatan **Node-Based Editor** (mirip Blender/Unreal Engine), pengguna dapat membangun alur perhitungan emisi secara visual, transparan, dan terstruktur.
-
-![Screenshot Workbench](https://via.placeholder.com/800x450?text=Workbench+Preview)
-
-## 🌟 Fitur Utama (v0.5)
-
-1.  **Infinite Canvas Workflow**:
-    *   Susun diagram perhitungan di canvas tanpa batas luas.
-    *   **Extended Zoom**: Zoom-out hingga 5% untuk melihat keseluruhan project yang besar.
-    *   **Interactive MiniMap**: Navigasi cepat dengan klik & drag pada minimap.
-    *   **Multi-Select**: Dukungan Shift+Click dan drag selection.
-
-2.  **Tipe Node Cerdas**:
-    *   **Source Node**: Input data aktivitas (misal: konsumsi bahan bakar dalam `Liter`, `Ton`, `kWh`).
-    *   **Factor Node**: Input faktor emisi. Terintegrasi dengan database **EMEP/EEA** (12.500+ data).
-    *   **Process Node**: Mesin hitung fleksibel. Dukung rumus kustom, eksponen unit otomatis, dan **centered handle alignment** saat minimized.
-    *   **TableMath Node**: Perhitungan batch data tabular dengan fungsi agregat (`$SUM`, `$AVG`).
-    *   **Ghost Node**: Node bayangan untuk mereferensikan nilai dari node lain tanpa garis ruwet (sekarang dengan auto-labeling).
-    *   **Group Node**: Pengelompokan visual yang lebih rapi tanpa outline yang mengganggu.
-    *   **Join, Filter, Transform**: Manipulasi data lengkap (SQL-like JOIN, filtering, transforming).
-
-3.  **Visual & UX Enhancements (v0.5)**:
-    *   **Prominent Titles**: Judul node lebih besar dan tebal untuk keterbacaan lebih baik.
-    *   **Smart Handles**: Titik koneksi otomatis menumpuk di tengah saat node di-minimize agar tetap rapi.
-    *   **Clean UI**: Penghapusan garis outline default yang mengganggu pada Group Node.
-
-4.  **Cascade Auto-Run**:
-    *   Otomatis menjalankan kalkulasi berantai saat data hulu berubah.
-
-5.  **Automatic Unit Conversion**:
-    *   Sistem secara otomatis mendeteksi dan menghitung satuan (misal: `kg` vs `ton`).
-
-## 🚀 Alur Penggunaan (Workflow)
-
-1.  **Input Data**: Tarik **Source Node** ke canvas, isi nilai aktivitas.
-2.  **Cari Faktor**: Tarik **Factor Node**, buka database, cari faktor emisi yang sesuai.
-3.  **Proses**: Hubungkan keduanya ke **Process Node**.
-4.  **Batch Processing**: Gunakan **Dataset Node** untuk upload CSV/Excel, lalu sambungkan ke **TableMath Node** untuk kalkulasi massal.
-5.  **Join Data**: Gunakan **Join Node** untuk menggabungkan data aktivitas dengan database referensi eksternal.
-
-## 🛠️ Instalasi & Menjalankan
-
-Project ini dibangun dengan **React**, **TypeScript**, **Vite**, dan **React Flow**.
-
-### Prasyarat
-*   Node.js (v18+)
-*   npm
-
-### Langkah-langkah
-1.  Clone repository:
-    ```bash
-    git clone https://github.com/uzanshid/InvenEmisi.git
-    cd InvenEmisi
-    ```
-
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-
-3.  Jalankan mode development:
-    ```bash
-    npm run dev
-    ```
-    Buka browser di `http://localhost:5173`.
-
-4.  Build untuk production:
-    ```bash
-    npm run build
-    ```
-
-## 🤝 Kontribusi (Roadmap)
-
-## 🤝 Kontribusi (Roadmap)
-
-Versi saat ini (v0.5 Beta) mencakup:
-*   [x] Multi-column database filtering
-*   [x] Join Node (VLOOKUP mechanism)
-*   [x] Aggregate Functions ($SUM, $AVG, $MIN, $MAX)
-*   [x] Cascade Auto-Run System
-*   [x] **UX Overhaul** (Zoom, MiniMap, Multi-select, Grouping)
-*   [x] Export/Import project
-*   [ ] Reporting module (Generasi PDF/Excel)
-*   [ ] Analisis ketidakpastian (Uncertainty Analysis)
+InvenEmis adalah aplikasi web modern berbasis *Visual Node Editor* yang dirancang khusus untuk memudahkan para ahli lingkungan dan perusahaan dalam melakukan perhitungan, pemrosesan, dan inventarisasi data emisi. Dengan antarmuka *drag-and-drop* yang intuitif, pengguna dapat memvisualisasikan seluruh alur perhitungan—mulai dari data mentah, penerapan faktor emisi, hingga hasil akhir—tanpa perlu menulis kode.
 
 ---
-**Developed by Fauzan Shidiq**
-*Open Source for Environmental Sustainability*
+
+## 🚀 Live Demo
+Aplikasi ini dapat diakses secara instan tanpa perlu instalasi!
+Pengecekan dan penggunaan InvenEmis dapat dilakukan langsung via browser Anda:
+**👉 [https://inven-emis.vercel.app/](https://inven-emis.vercel.app/)**
+
+*(Semua pemrosesan data, termasuk file Excel/CSV rahasia Anda, diproses 100% secara offline di dalam browser Anda. Tidak ada data yang dikirim ke server kami).*
+
+---
+
+## ✨ Fitur Utama (Hingga Versi 0.51 / Fase 12)
+
+Aplikasi InvenEmis telah mendukung berbagai operasi matematika dan manipulasi data tingkat lanjut melalui node-node yang saling terhubung:
+
+### 1. Sistem Canvas & Visual Flow
+*   **Drag & Drop Interface:** Tambahkan, pindahkan, dan hubungkan node-node komponen sesuka hati di atas kanvas interaktif.
+*   **Group Node (Kotak Grup):** Kelompokkan node-node terkait dalam satu kotak berwarna untuk kerapian visual.
+*   **Minimalist Mode:** Perkecil (minimize) node untuk menghemat ruang kanvas sambil mempertahankan koneksinya.
+*   **Ghost Node:** Buat "kloning visual" dari node sumber yang berada jauh agar kanvas tidak dipenuhi garis koneksi yang tumpang tindih. (Menggantikan Join Node).
+*   **Mini-Map & Controls:** Peta kecil di sudut layar untuk memantau area proyek yang luas.
+*   **Autosave & Project Management:** Pekerjaan otomatis tersimpan di *Local Storage* browser. Mendukung manajemen multi-proyek (Load, Rename, Delete).
+*   **Workspace Notes:** Editor catatan (Markdown) yang menempel (sticky) di setiap node untuk dokumentasi, referensi formula, maupun asumsi.
+
+### 2. Node Perhitungan Dasar (Skalar)
+Cocok untuk perhitungan manual atau parameter tetap.
+*   **Source Node:** Memasukkan nilai angka tunggal beserta unit/satuannya (misal: `100` `Ton`).
+*   **Factor Node:** Memasukkan nilai Faktor Emisi beserta satuannya (misal: `2.5` `kgCO2e/Ton`).
+*   **Process Node:** Inti perhitungan (Kalkulator). Menerima berbagai input (huruf A, B, C...) dan mendukung pengetikan rumus kompleks matematika secara langsung (misal: `(A * B) + C`). Memiliki fitur Unit Algebra (pencoretan satuan secara otomatis).
+*   **PassThrough Node:** Berfungsi sebagai "gerbang" (jembatan) untuk mengalirkan data menembus masuk atau keluar dari Group Node secara rapi.
+
+### 3. Node Pengolahan Data Massal (Batch/Tabular Data)
+Dirancang untuk mengolah data emisi dalam jumlah besar (ribuan baris).
+*   **Dataset Node:** Mengimpor file dataset nyata berekstensi `.csv` atau `.xlsx`. (Offline-first, diproses dalam memori RAM pengguna).
+*   **Filter Node:** Menyaring baris data berdasarkan kriteria tertentu (misalnya: `>=` nilai معين, atau `==` teks tertentu, mendukung perbandingan antar kolom).
+*   **TableMath Node:** Mirip seperti Process Node, tetapi beroperasi pada kolom-kolom tabel data. Anda bisa mengetikkan rumus menggunakan nama kolom aktual (misal: `[Konsumsi Bahan Bakar] * [Faktor Karbon]`) untuk menghasilkan kolom emisi baru.
+*   **Transform Node:** "Swiss Army Knife" untuk membersihkan data. Digunakan untuk menghapus (*Delete*), mengubah nama (*Rename*), atau menyeleksi (*Select/Keep*) kolom tertentu agar tabel hasil menjadi lebih rapi sebelum dieskpor. Fitur pamungkasnya adalah operasi **Combine** (Gabung), yang dapat menyatukan *(merge/concat)* kolom-kolom dari 2 atau lebih *Dataset Node* yang berbeda menjadi satu tabel utuh, asalkan jumlah barisnya sama.
+
+### 4. Sistem Formula & Fungsi (Batch Engine)
+InvenEmis didukung oleh engine matematika yang kuat (`mathjs`) dan telah diperluas dengan fungsi-fungsi ala Excel:
+*   **Operasi Dasar:** `+`, `-`, `*`, `/`, `^`, `%`.
+*   **Fungsi Referensi Lintas Baris (Lookup):**
+    *   `CEILINGLOOKUP(nilai_target; rentang_nilai; rentang_hasil)`: Mencari tipe/batas atas terdekat.
+    *   `FLOORLOOKUP(nilai_target; rentang_nilai; rentang_hasil)`: Mencari tipe/batas bawah terdekat.
+*   Dukungan untuk referensi skalar absolut (nilai konstan dari Node Faktor) yang dicampur dengan kolom tabel dinamis.
+
+### 5. Node Ekspor & AI Reporting (Fase 12)
+*   **Export Node:** Komponen akhir jembatan data. Dapat mengekspor hasil olahan akhir kembali menjadi file format `.xlsx` atau `.csv` ke komputer pengguna.
+*   **AI-Ready Semantic Export:** Terintegrasi dengan fitur ekstraksi berformat `[NamaProject]_AI_Report.json`. Melalui penelusuran arsitektur node secara mundur (Reverse Topo-Sort), fitur ini menghasilkan file "Mega-Prompt" yang siap diunggah ke ChatGPT/Claude (Code Interpreter) agar AI dapat otomatis memahami alur perhitungan Anda, membaca dataset, dan langsung menyusun Laporan Naratif Inventarisasi Emisi secara utuh!
+
+---
+
+## 💻 Instalasi Lokal (Bagi Developer)
+
+Jika Anda ingin menjalankan atau mengembangkan InvenEmis di komputer lokal Anda:
+
+### Prasyarat
+*   [Node.js](https://nodejs.org/) (versi 18.x atau 20.x ke atas)
+*   NPM, Yarn, atau PNPM
+
+### Langkah Instalasi
+1. Clone repositori ini:
+   ```bash
+   git clone https://github.com/uzanshid/InvenEmisi.git
+   cd InvenEmisi
+   ```
+2. Instal dependensi:
+   ```bash
+   npm install
+   ```
+3. Jalankan server pengembangan (Localhost):
+   ```bash
+   npm run dev
+   ```
+4. Buka browser dan arahkan ke alamat port lokal pembawa (biasanya `http://localhost:5173/`).
+
+---
+
+## 🛠 Teknologi yang Digunakan
+*   **Frontend Library:** React 19 + TypeScript
+*   **Build Tool:** Vite
+*   **Styling:** Tailwind CSS + Lucide React (Icons)
+*   **Visual Editor Engine:** React Flow
+*   **State Management:** Zustand (+ Zundo untuk fitur Undo/Redo di masa depan)
+*   **Math Engine:** Math.js + Custom Algebra Parser
+*   **Data Parsing:** PapaParse (CSV) + SheetJS (XLSX)
+*   **Data Grid/Tabel:** AG Grid
+
+---
+*Dikembangkan untuk mentransformasi lembar kerja statis menjadi alur perhitungan visual yang dinamis.*
