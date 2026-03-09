@@ -172,9 +172,6 @@ const GhostNode: React.FC<NodeProps<GhostNodeData>> = ({ id, data, selected }) =
                                         {typeof mirrored.value === 'number'
                                             ? mirrored.value.toLocaleString('en-US', { maximumFractionDigits: 6 })
                                             : String(mirrored.value)}
-                                        {mirrored.unit && (
-                                            <span className="text-slate-500 text-xs ml-1">{mirrored.unit}</span>
-                                        )}
                                     </div>
                                 </div>
                             )}

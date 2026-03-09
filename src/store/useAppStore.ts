@@ -356,9 +356,70 @@ export const useAppStore = create<AppState>()(
             },
 
             onNodesChange: (changes) => {
-                set((state) => ({
-                    nodes: applyNodeChanges(changes, state.nodes),
-                }));
+                set((state) => {
+                    let newNodes = applyNodeChanges(changes, state.nodes);
+
+                    // Handle drag end events to assign or remove parentNode
+                    const dragEndChanges = changes.filter((c: any) => c.type === 'position' && !c.dragging);
+                    
+                    if (dragEndChanges.length > 0) {
+                        const groups = newNodes.filter(n => n.type === 'groupBox');
+                        
+                        dragEndChanges.forEach((change: any) => {
+                            const node = newNodes.find(n => n.id === change.id);
+                            if (!node || node.type === 'groupBox') return;
+
+                            // Calculate actual absolute position (whether it has a parent or not)
+                            const absoluteX = node.parentNode 
+                                ? node.position.x + (newNodes.find(n => n.id === node.parentNode)?.position.x || 0)
+                                : node.position.x;
+                            const absoluteY = node.parentNode 
+                                ? node.position.y + (newNodes.find(n => n.id === node.parentNode)?.position.y || 0)
+                                : node.position.y;
+
+                            const nodeCenterX = absoluteX + (node.width || 100) / 2;
+                            const nodeCenterY = absoluteY + (node.height || 50) / 2;
+
+                            // Find which group bounds the node falls into
+                            const targetGroup = groups.find(g => {
+                                const gX = g.position.x;
+                                const gY = g.position.y;
+                                // Read width/height from style or default
+                                const gW = (g.style?.width as number) || g.width || 300;
+                                const gH = (g.style?.height as number) || g.height || 200;
+
+                                return (
+                                    nodeCenterX >= gX &&
+                                    nodeCenterX <= gX + gW &&
+                                    nodeCenterY >= gY &&
+                                    nodeCenterY <= gY + gH
+                                );
+                            });
+
+                            if (targetGroup && node.parentNode !== targetGroup.id) {
+                                // Assign to new group
+                                node.parentNode = targetGroup.id;
+                                node.extent = 'parent';
+                                // Adjust position to be relative to the new parent
+                                node.position = {
+                                    x: absoluteX - targetGroup.position.x,
+                                    y: absoluteY - targetGroup.position.y
+                                };
+                            } else if (!targetGroup && node.parentNode) {
+                                // Un-group
+                                node.parentNode = undefined;
+                                node.extent = undefined;
+                                // Adjust position back to absolute
+                                node.position = {
+                                    x: absoluteX,
+                                    y: absoluteY
+                                };
+                            }
+                        });
+                    }
+
+                    return { nodes: newNodes };
+                });
             },
 
             onEdgesChange: (changes) => {
