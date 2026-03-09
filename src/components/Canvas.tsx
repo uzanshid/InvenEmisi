@@ -48,13 +48,14 @@ const selector = (state: any) => ({
     copyNodes: state.copyNodes,
     pasteNodes: state.pasteNodes,
     setNodeZIndex: state.setNodeZIndex,
+    toggleNodeLock: state.toggleNodeLock,
 });
 
 const CanvasMain = () => {
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const {
         nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode,
-        deleteNodes, copyNodes, pasteNodes, setNodeZIndex
+        deleteNodes, copyNodes, pasteNodes, setNodeZIndex, toggleNodeLock
     } = useAppStore(useShallow(selector));
     const { deleteElements, getNodes, getEdges, screenToFlowPosition } = useReactFlow();
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -218,6 +219,19 @@ const CanvasMain = () => {
         setNodeZIndex(contextMenu.nodeId, 10);
     }, [contextMenu, setNodeZIndex]);
 
+    const handleLockNode = useCallback(() => {
+        if (!contextMenu || !contextMenu.nodeId) return;
+        toggleNodeLock(contextMenu.nodeId, true);
+    }, [contextMenu, toggleNodeLock]);
+
+    const handleUnlockNode = useCallback(() => {
+        if (!contextMenu || !contextMenu.nodeId) return;
+        toggleNodeLock(contextMenu.nodeId, false);
+    }, [contextMenu, toggleNodeLock]);
+
+    const contextMenuNode = contextMenu?.nodeId ? nodes.find((n: Node) => n.id === contextMenu.nodeId) : undefined;
+    const isNodeLocked = contextMenuNode ? contextMenuNode.draggable === false : false;
+
     return (
         <div className="flex-1 h-full w-full bg-slate-50 flex flex-col" ref={reactFlowWrapper}>
             <Toolbar />
@@ -281,6 +295,9 @@ const CanvasMain = () => {
                         onCreateNode={handleCreateNode}
                         onSendToBack={contextMenu.type === 'node' ? handleSendToBack : undefined}
                         onBringToFront={contextMenu.type === 'node' ? handleBringToFront : undefined}
+                        onLock={contextMenu.type === 'node' ? handleLockNode : undefined}
+                        onUnlock={contextMenu.type === 'node' ? handleUnlockNode : undefined}
+                        nodeLocked={isNodeLocked}
                     />
                 )}
                 <GlobalDataModal />

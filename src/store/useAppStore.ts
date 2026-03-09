@@ -101,6 +101,16 @@ const createNodeData = (type: NodeType): NodeData => {
     }
 };
 
+let isShiftDown = false;
+if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', e => {
+        if (e.key === 'Shift') isShiftDown = true;
+    });
+    window.addEventListener('keyup', e => {
+        if (e.key === 'Shift') isShiftDown = false;
+    });
+}
+
 export const useAppStore = create<AppState>()(
     temporal(
         (set, get) => ({
@@ -136,6 +146,14 @@ export const useAppStore = create<AppState>()(
 
                 // Trigger calculation after updating node data
                 setTimeout(() => get().runCalculations(), 0);
+            },
+
+            toggleNodeLock: (id: string, isLocked: boolean) => {
+                set((state) => ({
+                    nodes: state.nodes.map((node) =>
+                        node.id === id ? { ...node, draggable: !isLocked, selectable: true } : node
+                    ),
+                }));
             },
 
             deleteNodes: (nodeIds) => {
@@ -357,10 +375,33 @@ export const useAppStore = create<AppState>()(
 
             onNodesChange: (changes) => {
                 set((state) => {
-                    let newNodes = applyNodeChanges(changes, state.nodes);
+                    // Pre-process changes for orthogonal snapping
+                    let processedChanges = changes;
+                    
+                    if (isShiftDown) {
+                        processedChanges = changes.map(change => {
+                            if (change.type === 'position' && change.dragging && change.position) {
+                                const originalNode = state.nodes.find(n => n.id === change.id);
+                                if (originalNode && originalNode.position) {
+                                    const dx = Math.abs(change.position.x - originalNode.position.x);
+                                    const dy = Math.abs(change.position.y - originalNode.position.y);
+                                    
+                                    // Lock to the axis with the greatest delta
+                                    if (dx > dy) {
+                                        return { ...change, position: { x: change.position.x, y: originalNode.position.y } };
+                                    } else {
+                                        return { ...change, position: { x: originalNode.position.x, y: change.position.y } };
+                                    }
+                                }
+                            }
+                            return change;
+                        });
+                    }
+
+                    let newNodes = applyNodeChanges(processedChanges, state.nodes);
 
                     // Handle drag end events to assign or remove parentNode
-                    const dragEndChanges = changes.filter((c: any) => c.type === 'position' && !c.dragging);
+                    const dragEndChanges = processedChanges.filter((c: any) => c.type === 'position' && !c.dragging);
                     
                     if (dragEndChanges.length > 0) {
                         const groups = newNodes.filter(n => n.type === 'groupBox');
@@ -399,7 +440,7 @@ export const useAppStore = create<AppState>()(
                             if (targetGroup && node.parentNode !== targetGroup.id) {
                                 // Assign to new group
                                 node.parentNode = targetGroup.id;
-                                node.extent = 'parent';
+                                delete node.extent;
                                 // Adjust position to be relative to the new parent
                                 node.position = {
                                     x: absoluteX - targetGroup.position.x,

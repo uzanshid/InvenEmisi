@@ -12,6 +12,9 @@ interface ContextMenuProps {
     onCreateNode?: (type: NodeType) => void;
     onSendToBack?: () => void;
     onBringToFront?: () => void;
+    onLock?: () => void;
+    onUnlock?: () => void;
+    nodeLocked?: boolean;
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -24,6 +27,9 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     onCreateNode,
     onSendToBack,
     onBringToFront,
+    onLock,
+    onUnlock,
+    nodeLocked,
 }) => {
     const handleClick = (action: () => void) => {
         action();
@@ -66,6 +72,25 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                             >
                                 <Trash2 size={14} />
                                 Delete
+                            </button>
+                        )}
+                        {/* Lock / Unlock Toggle */}
+                        {onLock && !nodeLocked && (
+                            <button
+                                onClick={() => handleClick(onLock)}
+                                className="w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-slate-50 text-slate-700"
+                            >
+                                <span className="text-xs">🔒</span>
+                                Lock Node
+                            </button>
+                        )}
+                        {onUnlock && nodeLocked && (
+                            <button
+                                onClick={() => handleClick(onUnlock)}
+                                className="w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-slate-50 text-slate-700"
+                            >
+                                <span className="text-xs">🔓</span>
+                                Unlock Node
                             </button>
                         )}
                         {onSendToBack && (
