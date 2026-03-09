@@ -93,7 +93,7 @@ const GhostNode: React.FC<NodeProps<GhostNodeData>> = ({ id, data, selected }) =
             {isMinimized && mirrored && mirrored.value !== null && (
                 <div className="px-3 py-1.5 text-center">
                     <span className="text-xs font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
-                        {String(mirrored.value)} {mirrored.unit}
+                        {String(mirrored.value)}
                     </span>
                 </div>
             )}
@@ -123,7 +123,7 @@ const GhostNode: React.FC<NodeProps<GhostNodeData>> = ({ id, data, selected }) =
                                     if (e.target.value) {
                                         const selectedNode = availableNodes.find(n => n.id === e.target.value);
                                         const sourceLabel = selectedNode?.data?.label || 'Ghost';
-                                        updateNodeData(id, { sourceNodeId: e.target.value, label: `👻 ${sourceLabel}` });
+                                        updateNodeData(id, { sourceNodeId: e.target.value, label: sourceLabel });
                                         setShowPicker(false);
                                     }
                                 }}
