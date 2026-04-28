@@ -9,6 +9,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { useCascadeRun } from '../../hooks/useCascadeRun';
 import NoteIndicator from './NoteIndicator';
 import NoteEditor from './NoteEditor';
+import { NodeTitleInput } from './NodeTitleInput';
 
 interface Operation {
     type: 'delete' | 'rename' | 'select' | 'combine';
@@ -195,7 +196,7 @@ const TransformNode: React.FC<NodeProps<TransformNodeData>> = ({ id, data, selec
     const headerHeight = 36;
 
     return (
-        <div className={`bg-white rounded-lg shadow-md overflow-visible border-2 transition-all duration-200 ${selected ? 'border-cyan-600' : 'border-slate-200'} ${isMinimized ? 'w-fit min-w-[160px]' : 'w-[300px]'}`}>
+        <div className={`bg-white rounded-lg shadow-md overflow-visible border-2 transition-all duration-200 ${selected ? 'border-cyan-600' : 'border-slate-200'} w-[300px]`}>
             {/* Minimized: all handles stacked at center so edges stay connected */}
             {isMinimized && data.inputs.map((input: HandleData) => (
                 <Handle
@@ -215,12 +216,11 @@ const TransformNode: React.FC<NodeProps<TransformNodeData>> = ({ id, data, selec
             <div className="bg-cyan-600 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-white flex-1">
                     <Columns size={16} />
-                    <input
-                        type="text"
+                    <NodeTitleInput
                         value={data.label}
-                        onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="bg-transparent text-base font-bold outline-none placeholder-cyan-200 w-full"
-                        placeholder="Transform"
+                        onChange={(val) => updateNodeData(id, { label: val })}
+                        className="flex-1 font-bold text-base text-left text-white placeholder-cyan-200 bg-transparent outline-none"
+                        placeholder="Transform Name"
                     />
                 </div>
                 <div className="flex items-center gap-1.5">

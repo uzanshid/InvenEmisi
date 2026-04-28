@@ -6,6 +6,8 @@ import type { GhostNodeData } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import NoteIndicator from './NoteIndicator';
 import NoteEditor from './NoteEditor';
+import { NodeTitleInput } from './NodeTitleInput';
+import { formatDisplayNumber } from '../../utils/formatNumber';
 
 const GhostNode: React.FC<NodeProps<GhostNodeData>> = ({ id, data, selected }) => {
     const updateNodeData = useAppStore((state) => state.updateNodeData);
@@ -62,19 +64,18 @@ const GhostNode: React.FC<NodeProps<GhostNodeData>> = ({ id, data, selected }) =
 
     return (
         <div
-            className={`${isMinimized ? 'w-fit min-w-[120px]' : 'min-w-[200px]'} rounded-lg border-2 shadow-lg bg-slate-50 ${borderColor} ${selected ? 'ring-2 ring-slate-500 ring-offset-2' : ''}`}
+            className={`w-[300px] rounded-lg border-2 shadow-lg bg-slate-50 ${borderColor} ${selected ? 'ring-2 ring-slate-500 ring-offset-2' : ''}`}
             style={{ opacity: 0.9 }}
         >
             {/* Header */}
             <div className={`px-3 py-2 rounded-t-md ${headerBg} flex items-center justify-between`}>
                 <div className="flex items-center gap-2 text-white flex-1">
                     <Ghost size={14} className="opacity-80" />
-                    <input
-                        type="text"
+                    <NodeTitleInput
                         value={data.label}
-                        onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="bg-transparent text-base font-bold outline-none placeholder-slate-200 w-full"
-                        placeholder="Ghost"
+                        onChange={(val) => updateNodeData(id, { label: val })}
+                        className="flex-1 font-bold text-base text-left text-white placeholder-slate-200 bg-transparent outline-none"
+                        placeholder="Ghost Node"
                     />
                 </div>
                 <div className="flex items-center gap-1.5 ml-2">
@@ -93,7 +94,7 @@ const GhostNode: React.FC<NodeProps<GhostNodeData>> = ({ id, data, selected }) =
             {isMinimized && mirrored && mirrored.value !== null && (
                 <div className="px-3 py-1.5 text-center">
                     <span className="text-xs font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
-                        {String(mirrored.value)}
+                        {formatDisplayNumber(mirrored.value)}
                     </span>
                 </div>
             )}

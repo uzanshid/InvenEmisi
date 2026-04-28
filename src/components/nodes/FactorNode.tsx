@@ -8,6 +8,8 @@ import LookupDialog from '../LookupDialog';
 import type { EmissionFactor } from '../../data/emissionFactorDb';
 import NoteIndicator from './NoteIndicator';
 import NoteEditor from './NoteEditor';
+import { NodeTitleInput } from './NodeTitleInput';
+import { formatDisplayNumber } from '../../utils/formatNumber';
 
 // Format number
 const formatNumber = (num: number): string => {
@@ -37,9 +39,9 @@ const FactorNode: React.FC<NodeProps<FactorNodeData>> = ({ id, data, selected })
     const isDbMode = mode === 'LOCKED_DB';
     const hasValue = data.value !== undefined && data.value !== null && data.value !== 0;
     const isEmpty = !hasValue;
-
+    // Format output value for display
     const outputValue = hasValue
-        ? (data.unit ? `${formatNumber(data.value)} ${data.unit}` : formatNumber(data.value))
+        ? (data.unit ? `${formatDisplayNumber(data.value)} ${data.unit}` : formatDisplayNumber(data.value))
         : null;
 
     const handleFocus = () => {
@@ -115,16 +117,15 @@ const FactorNode: React.FC<NodeProps<FactorNodeData>> = ({ id, data, selected })
     return (
         <>
             <div
-                className={`${isMinimized ? 'w-fit min-w-[120px]' : 'min-w-[220px]'} rounded-lg border-2 shadow-lg ${bgColor} ${borderColor} ${selected ? 'ring-2 ring-emerald-500 ring-offset-2' : ''
+                className={`w-[300px] rounded-lg border-2 shadow-lg ${bgColor} ${borderColor} ${selected ? 'ring-2 ring-emerald-500 ring-offset-2' : ''
                     }`}
             >
                 {/* Header */}
                 <div className={`px-3 py-2 rounded-t-md ${headerBg} flex items-center justify-between`}>
-                    <input
-                        type="text"
+                    <NodeTitleInput
                         value={data.label}
-                        onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="flex-1 bg-transparent text-white font-bold text-base text-center outline-none placeholder-white/60"
+                        onChange={(val) => updateNodeData(id, { label: val })}
+                        className="flex-1 font-bold text-base text-left text-white placeholder-emerald-200"
                         placeholder="Factor Name"
                         readOnly={isDbMode}
                     />

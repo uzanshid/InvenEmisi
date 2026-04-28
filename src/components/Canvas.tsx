@@ -23,6 +23,7 @@ import TableMathNode from './nodes/TableMathNode';
 import ExportNode from './nodes/ExportNode';
 import TransformNode from './nodes/TransformNode';
 import GhostNode from './nodes/GhostNode';
+import TextNode from './nodes/TextNode';
 import { ContextMenu } from './ContextMenu';
 import { GlobalDataModal } from './GlobalDataModal';
 import { Toolbar } from './Toolbar';
@@ -72,25 +73,28 @@ const CanvasMain = () => {
         export: ExportNode,
         transform: TransformNode,
         ghost: GhostNode,
+        text: TextNode,
     }), []);
 
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
+            const active = document.activeElement;
+            const isEditing = active instanceof HTMLInputElement ||
+                active instanceof HTMLTextAreaElement ||
+                (active instanceof HTMLElement && active.isContentEditable);
+
             if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
+                if (isEditing) return;
                 event.preventDefault();
                 useAppStore.temporal.getState().undo();
             }
             if (event.ctrlKey && (event.key === 'y' || (event.shiftKey && event.key === 'z') || event.key === 'Z')) {
+                if (isEditing) return;
                 event.preventDefault();
                 useAppStore.temporal.getState().redo();
             }
             if (event.key === 'Delete' || event.key === 'Backspace') {
-                // Don't delete nodes if user is typing in an input/textarea
-                const active = document.activeElement;
-                const isEditing = active instanceof HTMLInputElement ||
-                    active instanceof HTMLTextAreaElement ||
-                    (active instanceof HTMLElement && active.isContentEditable);
                 if (isEditing) return;
 
                 const selectedNodes = getNodes().filter((node) => node.selected);
@@ -100,12 +104,14 @@ const CanvasMain = () => {
                 }
             }
             if (event.ctrlKey && event.key === 'c') {
+                if (isEditing) return;
                 const selectedNodes = getNodes().filter((node) => node.selected);
                 if (selectedNodes.length > 0) {
                     copyNodes(selectedNodes.map((n) => n.id));
                 }
             }
             if (event.ctrlKey && event.key === 'v') {
+                if (isEditing) return;
                 const rect = reactFlowWrapper.current?.getBoundingClientRect();
                 if (rect) {
                     const pos = screenToFlowPosition({ x: rect.width / 2, y: rect.height / 2 });
@@ -245,6 +251,12 @@ const CanvasMain = () => {
                     onConnect={onConnect}
                     onDrop={onDrop}
                     onDragOver={onDragOver}
+                    onNodeDragStart={() => useAppStore.temporal.getState().pause()}
+                    onNodeDragStop={() => {
+                        useAppStore.temporal.getState().resume();
+                        // Force temporal to record the final dragged state
+                        useAppStore.setState(state => ({ nodes: [...state.nodes] }));
+                    }}
                     onNodeContextMenu={onNodeContextMenu}
                     onEdgeContextMenu={onEdgeContextMenu}
                     onPaneContextMenu={onPaneContextMenu}
@@ -278,6 +290,7 @@ const CanvasMain = () => {
                                 case 'tableMath': return '#581c87';
                                 case 'transform': return '#0891b2';
                                 case 'ghost': return '#64748b';
+                                case 'text': return 'transparent';
                                 default: return '#cbd5e1';
                             }
                         }}

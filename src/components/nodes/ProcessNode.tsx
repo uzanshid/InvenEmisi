@@ -10,6 +10,8 @@ import { FormulaInput } from '../FormulaInput';
 import { FormulaHelpDialog } from '../FormulaHelpDialog';
 import NoteIndicator from './NoteIndicator';
 import NoteEditor from './NoteEditor';
+import { NodeTitleInput } from './NodeTitleInput';
+import { formatDisplayNumber } from '../../utils/formatNumber';
 
 interface EditableLabelProps {
     value: string;
@@ -247,7 +249,7 @@ const ProcessNode: React.FC<NodeProps<ProcessNodeData>> = ({ id, data, selected 
 
     return (
         <div
-            className={`${isMinimized ? 'w-fit min-w-[120px]' : 'min-w-[260px]'} rounded-lg border-2 shadow-lg ${isCircular
+            className={`w-[300px] rounded-lg border-2 shadow-lg ${isCircular
                 ? 'bg-red-50 border-red-400'
                 : hasError || batchError
                     ? 'bg-orange-50 border-orange-300'
@@ -257,11 +259,10 @@ const ProcessNode: React.FC<NodeProps<ProcessNodeData>> = ({ id, data, selected 
             {/* Header */}
             <div className={`px-3 py-2 rounded-t-md ${isCircular ? 'bg-red-500' : hasError ? 'bg-orange-500' : 'bg-purple-500'
                 } flex items-center justify-between`}>
-                <input
-                    type="text"
+                <NodeTitleInput
                     value={data.label}
-                    onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                    className="flex-1 bg-transparent text-white font-bold text-base text-center outline-none placeholder-purple-200"
+                    onChange={(val) => updateNodeData(id, { label: val })}
+                    className="flex-1 text-white font-bold text-base text-left placeholder-purple-200"
                     placeholder="Process Name"
                 />
                 <div className="flex items-center gap-1.5 ml-2">
@@ -280,7 +281,7 @@ const ProcessNode: React.FC<NodeProps<ProcessNodeData>> = ({ id, data, selected 
             {isMinimized && displayValue !== undefined && displayValue !== null && !hasError && (
                 <div className="px-3 py-1.5 text-center">
                     <span className="text-xs font-mono text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded">
-                        {String(displayValue)} {displayUnit || ''}
+                        {formatDisplayNumber(displayValue)} {displayUnit || ''}
                     </span>
                 </div>
             )}

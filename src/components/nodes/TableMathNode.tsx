@@ -11,6 +11,7 @@ import { FormulaInput } from '../FormulaInput';
 import { useCascadeRun } from '../../hooks/useCascadeRun';
 import NoteIndicator from './NoteIndicator';
 import NoteEditor from './NoteEditor';
+import { NodeTitleInput } from './NodeTitleInput';
 
 // Editable Label Component
 const EditableLabel: React.FC<{ value: string; onSave: (v: string) => void }> = ({ value, onSave }) => {
@@ -208,7 +209,7 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
     const headerHeight = 36;
 
     return (
-        <div className={`bg-white rounded-lg shadow-md overflow-visible border-2 transition-all duration-200 ${selected ? 'border-purple-800' : 'border-slate-200'} ${isMinimized ? 'w-fit min-w-[180px]' : 'w-[300px]'}`}>
+        <div className={`bg-white rounded-lg shadow-md overflow-visible border-2 transition-all duration-200 ${selected ? 'border-purple-800' : 'border-slate-200'} w-[300px]`}>
             {/* Input Handles - Always rendered */}
             {data.inputs.map((input: HandleData, index: number) => (
                 <Handle
@@ -228,12 +229,11 @@ const TableMathNode: React.FC<NodeProps<TableMathNodeData>> = ({ id, data, selec
             <div className="bg-purple-900 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-white flex-1">
                     <Calculator size={16} />
-                    <input
-                        type="text"
+                    <NodeTitleInput
                         value={data.label}
-                        onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="bg-transparent text-base font-bold outline-none placeholder-purple-300 w-full"
-                        placeholder="Table Math"
+                        onChange={(val) => updateNodeData(id, { label: val })}
+                        className="flex-1 font-bold text-base text-left text-white placeholder-purple-200 bg-transparent outline-none"
+                        placeholder="Table Math Name"
                     />
                 </div>
                 <div className="flex items-center gap-1.5">

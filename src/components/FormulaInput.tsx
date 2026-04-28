@@ -158,7 +158,7 @@ export const FormulaInput: React.FC<FormulaInputProps> = ({
         if (!textarea || !triggerInfo) return;
 
         const cursorPos = textarea.selectionStart;
-        let insertText = suggestion.insertText;
+        const insertText = suggestion.insertText;
 
         let replaceStart: number;
         let replaceEnd: number;

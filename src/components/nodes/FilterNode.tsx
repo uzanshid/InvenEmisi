@@ -1,7 +1,7 @@
 import React, { memo, useState } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import type { NodeProps } from 'reactflow';
-import { Filter, Eye, Minimize2, Maximize2 } from 'lucide-react';
+import { Filter, Minimize2, Maximize2, Eye } from 'lucide-react';
 import type { FilterNodeData } from '../../types';
 import { useBatchVisualStore } from '../../store/useBatchVisualStore';
 import { useAppStore } from '../../store/useAppStore';
@@ -9,6 +9,7 @@ import { useBatchDataStore } from '../../store/useBatchDataStore';
 import { useCascadeRun } from '../../hooks/useCascadeRun';
 import NoteIndicator from './NoteIndicator';
 import NoteEditor from './NoteEditor';
+import { NodeTitleInput } from './NodeTitleInput';
 
 const FilterNode: React.FC<NodeProps<FilterNodeData>> = ({ id, data, selected }) => {
     const openModal = useBatchVisualStore((state) => state.openModal);
@@ -56,17 +57,16 @@ const FilterNode: React.FC<NodeProps<FilterNodeData>> = ({ id, data, selected })
     };
 
     return (
-        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-yellow-500' : 'border-slate-200'} ${isMinimized ? 'w-fit min-w-[160px]' : 'w-[260px]'}`}>
+        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-yellow-500' : 'border-slate-200'} w-[300px]`}>
             {/* Header - Editable Title */}
             <div className="bg-yellow-500 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-white flex-1">
-                    <Filter size={16} />
-                    <input
-                        type="text"
+                    <Filter size={18} />
+                    <NodeTitleInput
                         value={data.label}
-                        onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="bg-transparent text-base font-bold outline-none placeholder-yellow-200 w-full"
-                        placeholder="Filter"
+                        onChange={(val) => updateNodeData(id, { label: val })}
+                        className="text-white font-bold text-base text-left placeholder-yellow-200 w-full"
+                        placeholder="Filter Name"
                     />
                 </div>
                 <div className="flex items-center gap-1.5">

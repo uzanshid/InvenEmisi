@@ -1,13 +1,14 @@
 import React, { memo, useState } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import type { NodeProps } from 'reactflow';
-import { FileSpreadsheet, Eye, Settings, Minimize2, Maximize2, Edit3 } from 'lucide-react';
+import { Database, FileSpreadsheet, Eye, Settings, Minimize2, Maximize2, Edit3 } from 'lucide-react';
 import type { DatasetNodeData } from '../../types';
 import { useBatchVisualStore } from '../../store/useBatchVisualStore';
 import { useBatchDataStore } from '../../store/useBatchDataStore';
 import { useAppStore } from '../../store/useAppStore';
 import NoteIndicator from './NoteIndicator';
 import NoteEditor from './NoteEditor';
+import { NodeTitleInput } from './NodeTitleInput';
 
 const DatasetNode: React.FC<NodeProps<DatasetNodeData>> = ({ id, data, selected }) => {
     const openModal = useBatchVisualStore((state) => state.openModal);
@@ -62,17 +63,16 @@ const DatasetNode: React.FC<NodeProps<DatasetNodeData>> = ({ id, data, selected 
     };
 
     return (
-        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-orange-500' : 'border-slate-200'} ${isMinimized ? 'w-fit min-w-[180px]' : 'w-[280px]'}`}>
+        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-orange-500' : 'border-slate-200'} w-[300px]`}>
             {/* Header - Editable Title */}
             <div className="bg-orange-500 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-white flex-1">
-                    <FileSpreadsheet size={16} />
-                    <input
-                        type="text"
+                    <Database size={18} />
+                    <NodeTitleInput
                         value={data.label}
-                        onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="bg-transparent text-base font-bold outline-none placeholder-orange-200 w-full"
-                        placeholder="Dataset"
+                        onChange={(val) => updateNodeData(id, { label: val })}
+                        className="text-white font-bold text-base text-left placeholder-orange-200 w-full"
+                        placeholder="Dataset Name"
                     />
                 </div>
                 <div className="flex items-center gap-1.5">

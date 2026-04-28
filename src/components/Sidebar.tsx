@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { NodeType } from '../types';
-import { Database, FileDigit, Settings, Layers, ArrowRightLeft, FileSpreadsheet, Filter, Calculator, Download, Columns, ChevronDown, ChevronRight, Ghost } from 'lucide-react';
+import { Database, FileDigit, Settings, Layers, ArrowRightLeft, FileSpreadsheet, Filter, Calculator, Download, Columns, ChevronDown, ChevronRight, Ghost, Type } from 'lucide-react';
 
 interface CollapsibleSectionProps {
     title: string;
@@ -92,6 +92,7 @@ export const Sidebar = () => {
                 <CollapsibleSection title="Organization" defaultOpen={false}>
                     <NodeCard nodeType="groupBox" label="Group" icon={<Layers size={20} />} accentColor="#1aada8" onDragStart={onDragStart} />
                     <NodeCard nodeType="passthrough" label="PassThrough" icon={<ArrowRightLeft size={20} />} accentColor="#0d8fb5" onDragStart={onDragStart} />
+                    <NodeCard nodeType="text" label="Text Note" icon={<Type size={20} />} accentColor="#94a3b8" onDragStart={onDragStart} />
                 </CollapsibleSection>
 
                 <CollapsibleSection title="Batch Processing" defaultOpen={false}>

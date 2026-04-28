@@ -96,6 +96,11 @@ const createNodeData = (type: NodeType): NodeData => {
                 type: 'ghost',
                 outputs: [{ id: generateId(), label: 'Output' }],
             } as any;
+        case 'text':
+            return {
+                type: 'text',
+                text: '',
+            } as any;
         default:
             throw new Error(`Unknown node type: ${type}`);
     }
@@ -398,7 +403,7 @@ export const useAppStore = create<AppState>()(
                         });
                     }
 
-                    let newNodes = applyNodeChanges(processedChanges, state.nodes);
+                    const newNodes = applyNodeChanges(processedChanges, state.nodes);
 
                     // Handle drag end events to assign or remove parentNode
                     const dragEndChanges = processedChanges.filter((c: any) => c.type === 'position' && !c.dragging);

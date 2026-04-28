@@ -6,8 +6,9 @@ import type { SourceNodeData } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import NoteIndicator from './NoteIndicator';
 import NoteEditor from './NoteEditor';
+import { NodeTitleInput } from './NodeTitleInput';
+import { formatDisplayNumber } from '../../utils/formatNumber';
 
-// Format number with thousand separators, preserve all decimals
 const formatNumber = (num: number): string => {
     if (num === 0) return '0';
     // For very small numbers, use up to 10 decimal places
@@ -35,9 +36,9 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
     const hasValue = data.value !== undefined && data.value !== null && data.value !== 0;
     const isEmpty = !hasValue;
 
-    // Format output value for display
+    // Format output value for display (specifically for minimized view)
     const outputValue = hasValue
-        ? (data.unit ? `${formatNumber(data.value)} ${data.unit}` : formatNumber(data.value))
+        ? (data.unit ? `${formatDisplayNumber(data.value)} ${data.unit}` : formatDisplayNumber(data.value))
         : null;
 
     const handleFocus = () => {
@@ -96,16 +97,15 @@ const SourceNode: React.FC<NodeProps<SourceNodeData>> = ({ id, data, selected })
 
     return (
         <div
-            className={`${isMinimized ? 'w-fit min-w-[120px]' : 'min-w-[200px]'} rounded-lg border-2 shadow-lg ${isEmpty ? 'bg-yellow-50 border-yellow-300' : 'bg-blue-50 border-blue-200'
+            className={`w-[300px] rounded-lg border-2 shadow-lg ${isEmpty ? 'bg-yellow-50 border-yellow-300' : 'bg-blue-50 border-blue-200'
                 } ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
         >
             {/* Header */}
             <div className={`px-3 py-2 rounded-t-md ${isEmpty ? 'bg-yellow-500' : 'bg-blue-500'} flex items-center justify-between`}>
-                <input
-                    type="text"
+                <NodeTitleInput
                     value={data.label}
-                    onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                    className="flex-1 bg-transparent text-white font-bold text-base text-center outline-none placeholder-blue-200"
+                    onChange={(val) => updateNodeData(id, { label: val })}
+                    className="flex-1 text-white font-bold text-base text-left placeholder-blue-200"
                     placeholder="Node Name"
                 />
                 <div className="flex items-center gap-1.5 ml-2">

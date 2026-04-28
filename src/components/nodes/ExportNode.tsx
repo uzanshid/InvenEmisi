@@ -10,6 +10,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { utils, writeFile } from 'xlsx';
 import NoteIndicator from './NoteIndicator';
 import NoteEditor from './NoteEditor';
+import { NodeTitleInput } from './NodeTitleInput';
 import { generateAIReportPayload } from '../../utils/aiExport';
 
 const ExportNode: React.FC<NodeProps<ExportNodeData>> = ({ id, data, selected }) => {
@@ -96,17 +97,16 @@ const ExportNode: React.FC<NodeProps<ExportNodeData>> = ({ id, data, selected })
     };
 
     return (
-        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-emerald-600' : 'border-slate-200'} ${isMinimized ? 'w-fit min-w-[160px]' : 'w-[280px]'}`}>
+        <div className={`bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${selected ? 'border-emerald-600' : 'border-slate-200'} w-[300px]`}>
             {/* Header */}
             <div className="bg-emerald-600 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-white flex-1">
-                    <Download size={16} />
-                    <input
-                        type="text"
+                    <Download size={18} />
+                    <NodeTitleInput
                         value={data.label}
-                        onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                        className="bg-transparent text-base font-bold outline-none placeholder-emerald-200 w-full"
-                        placeholder="Export"
+                        onChange={(val) => updateNodeData(id, { label: val })}
+                        className="text-white font-bold text-base text-left placeholder-emerald-200 w-full"
+                        placeholder="Export Name"
                     />
                 </div>
                 <div className="flex items-center gap-1.5">

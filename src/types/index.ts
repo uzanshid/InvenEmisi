@@ -1,6 +1,6 @@
 import type { Node, Edge, XYPosition, Connection, OnNodesChange, OnEdgesChange } from 'reactflow';
 
-export type NodeType = 'source' | 'process' | 'factor' | 'groupBox' | 'passthrough' | 'dataset' | 'filter' | 'tableMath' | 'export' | 'transform' | 'ghost';
+export type NodeType = 'source' | 'process' | 'factor' | 'groupBox' | 'passthrough' | 'dataset' | 'filter' | 'tableMath' | 'export' | 'transform' | 'ghost' | 'text';
 
 export interface HandleData {
     id: string;
@@ -135,7 +135,20 @@ export interface GhostNodeData extends BaseNodeData {
     outputs: HandleData[];
 }
 
-export type NodeData = SourceNodeData | FactorNodeData | ProcessNodeData | GroupNodeData | PassThroughNodeData | DatasetNodeData | FilterNodeData | TableMathNodeData | ExportNodeData | TransformNodeData | GhostNodeData;
+// Text Node: Free text for annotations on canvas
+export interface TextNodeData {
+    type: 'text';
+    text: string;
+    label?: string; // Optional label to satisfy NodeData union
+    fontSize?: number;
+    color?: string;
+    textAlign?: 'left' | 'center' | 'right' | 'justify';
+    isBold?: boolean;
+    isItalic?: boolean;
+    isUnderline?: boolean;
+}
+
+export type NodeData = SourceNodeData | FactorNodeData | ProcessNodeData | GroupNodeData | PassThroughNodeData | DatasetNodeData | FilterNodeData | TableMathNodeData | ExportNodeData | TransformNodeData | GhostNodeData | TextNodeData;
 
 export interface AppState {
     nodes: Node<NodeData>[];
