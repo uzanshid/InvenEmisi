@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
 dist
 dist-ssr
@@ -22,3 +23,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Graphify
+graphify-out/
+.graphify/
+
+# Media (Sisa aturan lama)
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.ico

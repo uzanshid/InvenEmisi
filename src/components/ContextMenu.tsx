@@ -15,6 +15,7 @@ interface ContextMenuProps {
     onLock?: () => void;
     onUnlock?: () => void;
     nodeLocked?: boolean;
+    onAlign?: (alignType: 'left' | 'right' | 'top' | 'bottom' | 'center-h' | 'center-v') => void;
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -30,6 +31,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     onLock,
     onUnlock,
     nodeLocked,
+    onAlign,
 }) => {
     const handleClick = (action: () => void) => {
         action();
@@ -117,6 +119,33 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                 {/* Multi-select options */}
                 {type === 'multi' && (
                     <>
+                        <div className="px-3 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider mt-1">
+                            Alignment
+                        </div>
+                        {onAlign && (
+                            <>
+                                <button onClick={() => handleClick(() => onAlign('left'))} className="w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-slate-50 text-slate-700">
+                                    <span className="w-4 text-center">⇤</span> Rata Kiri
+                                </button>
+                                <button onClick={() => handleClick(() => onAlign('center-h'))} className="w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-slate-50 text-slate-700">
+                                    <span className="w-4 text-center">⇹</span> Rata Tengah Horizontal
+                                </button>
+                                <button onClick={() => handleClick(() => onAlign('right'))} className="w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-slate-50 text-slate-700">
+                                    <span className="w-4 text-center">⇥</span> Rata Kanan
+                                </button>
+                                <div className="h-px bg-slate-200 my-1" />
+                                <button onClick={() => handleClick(() => onAlign('top'))} className="w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-slate-50 text-slate-700">
+                                    <span className="w-4 text-center">⇡</span> Rata Atas
+                                </button>
+                                <button onClick={() => handleClick(() => onAlign('center-v'))} className="w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-slate-50 text-slate-700">
+                                    <span className="w-4 text-center">⇕</span> Rata Tengah Vertikal
+                                </button>
+                                <button onClick={() => handleClick(() => onAlign('bottom'))} className="w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-slate-50 text-slate-700">
+                                    <span className="w-4 text-center">⇣</span> Rata Bawah
+                                </button>
+                            </>
+                        )}
+                        <div className="h-px bg-slate-200 my-1" />
                         {onCopy && (
                             <button
                                 onClick={() => handleClick(onCopy)}
@@ -138,7 +167,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                     </>
                 )}
 
-                {/* Pane (empty canvas) options */}
+                {/* Pane options */}
                 {type === 'pane' && onCreateNode && (
                     <div className="group relative">
                         <button

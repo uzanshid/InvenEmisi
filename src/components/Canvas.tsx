@@ -5,6 +5,7 @@ import ReactFlow, {
     MiniMap,
     ReactFlowProvider,
     useReactFlow,
+    useStore,
     SelectionMode,
 } from 'reactflow';
 import type { Node, Edge } from 'reactflow';
@@ -50,13 +51,74 @@ const selector = (state: any) => ({
     pasteNodes: state.pasteNodes,
     setNodeZIndex: state.setNodeZIndex,
     toggleNodeLock: state.toggleNodeLock,
+    alignNodes: state.alignNodes,
 });
+
+const SnapLinesOverlay = () => {
+    const snapLines = useAppStore(s => s.snapLines);
+    const transform = useStore(s => s.transform);
+
+    if (!snapLines || snapLines.length === 0) return null;
+    const strokeW = 1 / transform[2];
+    const fontSize = 10 / transform[2];
+    const tickLen = 10 / transform[2];
+
+    return (
+        <svg style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            zIndex: 1000,
+        }}>
+            <g transform={`translate(${transform[0]}, ${transform[1]}) scale(${transform[2]})`}>
+                {snapLines.map((line, i) => {
+                    if (line.type === 'alignment') {
+                        if (line.x !== undefined) {
+                            return <line key={`ax-${i}`} x1={line.x} y1={-99999} x2={line.x} y2={99999} stroke="#ef4444" strokeWidth={strokeW} strokeDasharray={`${5 * strokeW},${5 * strokeW}`} />
+                        }
+                        if (line.y !== undefined) {
+                            return <line key={`ay-${i}`} x1={-99999} y1={line.y} x2={99999} y2={line.y} stroke="#ef4444" strokeWidth={strokeW} strokeDasharray={`${5 * strokeW},${5 * strokeW}`} />
+                        }
+                    } else if (line.type === 'spacing') {
+                        const { startX = 0, endX = 0, startY = 0, endY = 0, gap = 0 } = line;
+                        const isHorizontal = startY === endY;
+                        
+                        return (
+                            <g key={`sp-${i}`}>
+                                <line x1={startX} y1={startY} x2={endX} y2={endY} stroke="#3b82f6" strokeWidth={strokeW} />
+                                {isHorizontal ? (
+                                    <>
+                                        <line x1={startX} y1={startY - tickLen/2} x2={startX} y2={startY + tickLen/2} stroke="#3b82f6" strokeWidth={strokeW} />
+                                        <line x1={endX} y1={startY - tickLen/2} x2={endX} y2={startY + tickLen/2} stroke="#3b82f6" strokeWidth={strokeW} />
+                                        <rect x={(startX + endX)/2 - fontSize*1.5} y={startY - fontSize*0.6} width={fontSize*3} height={fontSize*1.2} fill="#3b82f6" rx={2/transform[2]} />
+                                        <text x={(startX + endX)/2} y={startY} fontSize={fontSize} fill="white" textAnchor="middle" dominantBaseline="central" fontWeight="bold">{gap}px</text>
+                                    </>
+                                ) : (
+                                    <>
+                                        <line x1={startX - tickLen/2} y1={startY} x2={startX + tickLen/2} y2={startY} stroke="#3b82f6" strokeWidth={strokeW} />
+                                        <line x1={startX - tickLen/2} y1={endY} x2={startX + tickLen/2} y2={endY} stroke="#3b82f6" strokeWidth={strokeW} />
+                                        <rect x={startX - fontSize*1.5} y={(startY + endY)/2 - fontSize*0.6} width={fontSize*3} height={fontSize*1.2} fill="#3b82f6" rx={2/transform[2]} />
+                                        <text x={startX} y={(startY + endY)/2} fontSize={fontSize} fill="white" textAnchor="middle" dominantBaseline="central" fontWeight="bold">{gap}px</text>
+                                    </>
+                                )}
+                            </g>
+                        );
+                    }
+                    return null;
+                })}
+            </g>
+        </svg>
+    );
+};
 
 const CanvasMain = () => {
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const {
         nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode,
-        deleteNodes, copyNodes, pasteNodes, setNodeZIndex, toggleNodeLock
+        deleteNodes, copyNodes, pasteNodes, setNodeZIndex, toggleNodeLock, alignNodes
     } = useAppStore(useShallow(selector));
     const { deleteElements, getNodes, getEdges, screenToFlowPosition } = useReactFlow();
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -271,6 +333,7 @@ const CanvasMain = () => {
                     minZoom={0.05}
                     fitView
                 >
+                    <SnapLinesOverlay />
                     <Background color="#94a3b8" gap={16} size={1} />
                     <Controls className="!bg-white !border-slate-200 !shadow-sm [&>button]:!border-slate-100 [&>button]:!text-slate-600 hover:[&>button]:!bg-slate-50" />
                     <MiniMap
@@ -311,6 +374,7 @@ const CanvasMain = () => {
                         onLock={contextMenu.type === 'node' ? handleLockNode : undefined}
                         onUnlock={contextMenu.type === 'node' ? handleUnlockNode : undefined}
                         nodeLocked={isNodeLocked}
+                        onAlign={contextMenu.type === 'multi' ? alignNodes : undefined}
                     />
                 )}
                 <GlobalDataModal />

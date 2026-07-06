@@ -3,6 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X, Table } from 'lucide-react';
 import { useBatchVisualStore } from '../store/useBatchVisualStore';
 import { useBatchDataStore } from '../store/useBatchDataStore';
+import { dataDb } from '../lib/indexedDB';
 import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 
@@ -22,6 +23,15 @@ export const GlobalDataModal = () => {
     );
 
     const [colDefs, setColDefs] = useState<any[]>([]);
+    const [rowData, setRowData] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (activeNodeData?.status === 'SUCCESS' && activeNodeId) {
+            dataDb.get(activeNodeId).then(data => setRowData(data));
+        } else {
+            setRowData([]);
+        }
+    }, [activeNodeData?.status, activeNodeId]);
 
     useEffect(() => {
         if (activeNodeData?.schema) {
@@ -90,7 +100,7 @@ export const GlobalDataModal = () => {
                                 }}
                             >
                                 <AgGridReact
-                                    rowData={activeNodeData.rawData}
+                                    rowData={rowData}
                                     columnDefs={colDefs || []}
                                     pagination={true}
                                     paginationPageSize={100}

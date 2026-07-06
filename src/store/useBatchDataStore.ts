@@ -3,6 +3,7 @@ import Papa from 'papaparse';
 import { executeBatchFormula } from '../lib/batchCalculationEngine';
 import { read, utils } from 'xlsx';
 import { useAppStore } from './useAppStore';
+import { dataDb } from '../lib/indexedDB';
 
 export interface ColumnMetadata {
     id: string;
@@ -107,14 +108,14 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
                             nodes: {
                                 ...state.nodes,
                                 [nodeId]: {
-                                    rawData: rows,
+                                    rawData: [],
                                     schema: schema,
                                     status: 'SUCCESS',
                                     rowCount: rows.length
                                 }
                             }
                         }));
-                        resolve();
+                        dataDb.set(nodeId, rows).then(() => resolve());
                     } catch (error: any) {
                         set((state) => ({
                             nodes: {
@@ -169,14 +170,14 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
                         nodes: {
                             ...state.nodes,
                             [nodeId]: {
-                                rawData: rows,
+                                rawData: [],
                                 schema: schema,
                                 status: 'SUCCESS',
                                 rowCount: rows.length
                             }
                         }
                     }));
-                    resolve();
+                    dataDb.set(nodeId, rows).then(() => resolve());
                 },
                 error: (error) => {
                     set((state) => ({
@@ -197,23 +198,8 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
 
     runMath: (nodeId, sourceNodeId, formula, newColName, scalarInputs = {}, unitOverride) => {
         const sourceNode = get().getNodeData(sourceNodeId);
-
-        if (!sourceNode || !sourceNode.rawData || sourceNode.rawData.length === 0) {
-            console.error("Source node data not found for math:", sourceNodeId);
-            set((state) => ({
-                nodes: {
-                    ...state.nodes,
-                    [nodeId]: {
-                        rawData: [],
-                        schema: [],
-                        status: 'ERROR',
-                        errorDetails: { rowIndex: -1, message: 'No source data connected' },
-                        rowCount: 0
-                    }
-                }
-            }));
-            return;
-        }
+        
+        if (!sourceNode) return;
 
         set((state) => ({
             nodes: {
@@ -227,48 +213,32 @@ export const useBatchDataStore = create<BatchDataStore>((set, get) => ({
             }
         }));
 
-        setTimeout(() => {
-            const schemaIds = sourceNode.schema.map(s => s.id);
-            // Build columnUnits map from schema
-            const columnUnits: Record<string, string> = {};
-            sourceNode.schema.forEach(col => {
-                if (col.unit) columnUnits[col.id] = col.unit;
-            });
+        dataDb.get(sourceNodeId).then(sourceData => {
+            if (!sourceData || sourceData.length === 0) {
+                set((state) => ({
+                    nodes: { ...state.nodes, [nodeId]: { rawData: [], schema: [], status: 'ERROR', errorDetails: { rowIndex: -1, message: 'No source data connected' }, rowCount: 0 } }
+                }));
+                return;
+            }
 
-            const result = executeBatchFormula(sourceNode.rawData, newColName, formula, schemaIds, columnUnits, scalarInputs);
+            const schemaIds = sourceNode.schema.map(s => s.id);
+            const columnUnits: Record<string, string> = {};
+            sourceNode.schema.forEach(col => { if (col.unit) columnUnits[col.id] = col.unit; });
+
+            const result = executeBatchFormula(sourceData, newColName, formula, schemaIds, columnUnits, scalarInputs);
 
             if (result.success && result.data) {
-                const newSchema = [
-                    ...sourceNode.schema,
-                    { id: newColName, name: newColName, type: 'number', unit: unitOverride?.trim() || result.derivedUnit }
-                ] as ColumnMetadata[];
-
+                const newSchema = [...sourceNode.schema, { id: newColName, name: newColName, type: 'number', unit: unitOverride?.trim() || result.derivedUnit }] as ColumnMetadata[];
                 set((state) => ({
-                    nodes: {
-                        ...state.nodes,
-                        [nodeId]: {
-                            rawData: result.data!,
-                            schema: newSchema,
-                            status: 'SUCCESS',
-                            rowCount: result.data!.length
-                        }
-                    }
+                    nodes: { ...state.nodes, [nodeId]: { rawData: [], schema: newSchema, status: 'SUCCESS', rowCount: result.data!.length } }
                 }));
+                dataDb.set(nodeId, result.data!);
             } else {
                 set((state) => ({
-                    nodes: {
-                        ...state.nodes,
-                        [nodeId]: {
-                            rawData: [],
-                            schema: [],
-                            status: 'ERROR',
-                            errorDetails: result.error,
-                            rowCount: 0
-                        }
-                    }
+                    nodes: { ...state.nodes, [nodeId]: { rawData: [], schema: [], status: 'ERROR', errorDetails: result.error, rowCount: 0 } }
                 }));
             }
-        }, 100);
+        });
     },
 
     runFilter: (nodeId, sourceNodeId, criteria) => {

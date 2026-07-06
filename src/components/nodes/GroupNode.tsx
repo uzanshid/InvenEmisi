@@ -3,6 +3,7 @@ import type { NodeProps } from 'reactflow';
 import { Layers } from 'lucide-react';
 import type { GroupNodeData } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
+import { NodeTitleInput } from './NodeTitleInput';
 
 /**
  * A single resize corner dot.
@@ -126,12 +127,10 @@ const GroupNode: React.FC<NodeProps<GroupNodeData>> = ({ id, data, selected }) =
                 style={{ backgroundColor: `${color}20` }}
             >
                 <Layers size={16} style={{ color }} />
-                <input
-                    type="text"
+                <NodeTitleInput
                     value={data.label}
-                    onChange={(e) => updateNodeData(id, { label: e.target.value })}
-                    className="flex-1 bg-transparent text-base font-bold outline-none"
-                    style={{ color }}
+                    onChange={(val) => updateNodeData(id, { label: val })}
+                    className="flex-1 text-base font-bold"
                     placeholder="Group Name"
                 />
                 <input

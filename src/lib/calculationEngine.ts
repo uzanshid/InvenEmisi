@@ -27,25 +27,14 @@ interface UnitValue {
 }
 
 /**
- * Known molecule names that should NOT be parsed as exponents
- */
-const MOLECULE_NAMES = ['CO2', 'H2O', 'SO2', 'NO2', 'CH4', 'N2O', 'O2', 'N2', 'H2'];
-
-/**
  * Parse a single unit that may have exponent notation
- * e.g., "kg^2" → ["kg", "kg"], "m2" → ["m", "m"], "CO2" → ["CO2"]
+ * Enforces caret (^) for exponents. e.g., "kg^2" → ["kg", "kg"]
+ * Chemistry molecules like "CO2", "NH3", or simple numbers like "m2" will not be expanded
+ * without the caret, avoiding bugs with dynamic molecules.
  */
 function parseUnitWithExponent(unit: string): string[] {
-    // Check if it's a known molecule
-    const upperUnit = unit.toUpperCase();
-    for (const molecule of MOLECULE_NAMES) {
-        if (upperUnit === molecule.toUpperCase()) {
-            return [unit]; // Return as-is, not an exponent
-        }
-    }
-
     // Check for caret notation: kg^2, m^3, s^-2
-    const caretMatch = unit.match(/^([a-zA-Z]+)\^(-?\d+)$/);
+    const caretMatch = unit.match(/^([a-zA-Z0-9_]+)\^(-?\d+)$/);
     if (caretMatch) {
         const baseUnit = caretMatch[1];
         const exponent = parseInt(caretMatch[2]);
@@ -57,16 +46,7 @@ function parseUnitWithExponent(unit: string): string[] {
         return Array(exponent).fill(baseUnit);
     }
 
-    // Check for number suffix: kg2, m3 (but not at start like 2kg)
-    const numMatch = unit.match(/^([a-zA-Z]+)(\d+)$/);
-    if (numMatch) {
-        const baseUnit = numMatch[1];
-        const exponent = parseInt(numMatch[2]);
-        if (exponent === 0) return [];
-        return Array(exponent).fill(baseUnit);
-    }
-
-    // Regular unit
+    // Regular unit (including things like CO2, NH3, m2 if caret is not used)
     return [unit];
 }
 

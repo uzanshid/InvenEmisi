@@ -2,6 +2,18 @@ import type { Node, Edge, XYPosition, Connection, OnNodesChange, OnEdgesChange }
 
 export type NodeType = 'source' | 'process' | 'factor' | 'groupBox' | 'passthrough' | 'dataset' | 'filter' | 'tableMath' | 'export' | 'transform' | 'ghost' | 'text';
 
+export interface SnapLine {
+    type: 'alignment' | 'spacing';
+    x?: number;
+    y?: number;
+    // For spacing guides
+    startX?: number;
+    endX?: number;
+    startY?: number;
+    endY?: number;
+    gap?: number;
+}
+
 export interface HandleData {
     id: string;
     label: string;
@@ -154,7 +166,10 @@ export interface AppState {
     nodes: Node<NodeData>[];
     edges: Edge[];
     clipboard: Node<NodeData>[];
+    snapLines: SnapLine[];
+    setSnapLines: (lines: SnapLine[]) => void;
     // Node actions
+    alignNodes: (alignType: 'left' | 'right' | 'top' | 'bottom' | 'center-h' | 'center-v') => void;
     addNode: (type: NodeType, pos: XYPosition) => void;
     updateNodeData: <T extends NodeData>(id: string, data: Partial<T>) => void;
     deleteNodes: (nodeIds: string[]) => void;
